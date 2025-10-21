@@ -12,8 +12,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 
   // ログインページ以外で未ログインの場合はログインページへ
   // （ミドルウェアで既にチェックされているが、念のため）
-  if (!session?.user) {
-    redirect('/admin/login')
+  if (!session?.user || session.user.user_metadata?.role !== 'admin') {
+    return <>{children}</>
   }
 
   // ユーザー情報の取得
