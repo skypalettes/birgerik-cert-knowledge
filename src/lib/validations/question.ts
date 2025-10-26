@@ -4,13 +4,13 @@ import { z } from 'zod'
  * 選択肢のバリデーションスキーマ
  */
 export const choiceSchema = z.object({
-  id: z.string().optional(), // 既存の選択肢の場合はIDあり
+  id: z.string().optional(),
   choice_text: z
     .string()
     .min(1, '選択肢のテキストは必須です')
     .max(500, '選択肢は500文字以内で入力してください')
     .trim(),
-  is_correct: z.boolean(), // .default()を削除
+  is_correct: z.boolean(),
   order_index: z.number().int().min(0),
 })
 
@@ -31,7 +31,7 @@ export const questionFormSchema = z.object({
     .string()
     .max(2000, '解説は2000文字以内で入力してください')
     .trim(),
-  is_multiple_choice: z.boolean(), // .default()を削除
+  is_multiple_choice: z.boolean(),
   choices: z
     .array(choiceSchema)
     .min(2, '選択肢は最低2つ必要です')
@@ -41,17 +41,29 @@ export const questionFormSchema = z.object({
       {
         message: '少なくとも1つの正解を選択してください',
       }
-    )
-    .refine(
-      (choices) => {
-        // 単一選択問題の場合、正解は1つのみ
-        const correctCount = choices.filter((c) => c.is_correct).length
-        return correctCount > 0
-      },
-      {
-        message: '正解を選択してください',
-      }
     ),
+})
+// ✅ is_multiple_choiceと選択肢の整合性チェックを追加
+.superRefine((data, ctx) => {
+  const correctCount = data.choices.filter((c) => c.is_correct).length
+  
+  // 単一選択問題の場合、正解は1つのみ
+  if (!data.is_multiple_choice && correctCount !== 1) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: '単一選択問題では正解を1つだけ選択してください',
+      path: ['choices'],
+    })
+  }
+  
+  // 複数選択問題の場合、正解は1つ以上
+  if (data.is_multiple_choice && correctCount < 1) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: '複数選択問題では少なくとも1つの正解を選択してください',
+      path: ['choices'],
+    })
+  }
 })
 
 /**
@@ -71,7 +83,7 @@ export const questionSchema = z.object({
       const trimmed = val.trim()
       return trimmed === '' ? null : trimmed
     }),
-  is_multiple_choice: z.boolean(), // .default()を削除
+  is_multiple_choice: z.boolean(),
   order_index: z.number().int().min(0).nullable().optional(),
   choices: z
     .array(choiceSchema)

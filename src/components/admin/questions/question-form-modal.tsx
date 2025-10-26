@@ -1,12 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useForm, useFieldArray } from 'react-hook-form'
+import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Modal, ModalFooter } from '@/components/shared/ui/modal'
 import { Button } from '@/components/shared/ui/button'
 import { Input } from '@/components/shared/ui/input'
-import { Textarea } from '@/components/shared/ui/textarea'
+import { RichTextEditor } from '@/components/shared/ui/rich-text-editor'
 import { toast } from '@/lib/utils/toast'
 import { Plus, Trash2, CheckCircle2 } from 'lucide-react'
 import {
@@ -88,10 +88,8 @@ export function QuestionFormModal({
     name: 'choices',
   })
 
-  // is_multiple_choiceの値を監視
   const isMultipleChoice = watch('is_multiple_choice')
 
-  // 編集モードの場合、フォームに既存データをセット
   useEffect(() => {
     if (question && question.choices) {
       reset({
@@ -123,9 +121,6 @@ export function QuestionFormModal({
     setIsSubmitting(true)
 
     try {
-      let result
-
-      // 選択肢にorder_indexを設定
       const formattedData = {
         ...data,
         choices: data.choices.map((choice, index) => ({
@@ -133,6 +128,8 @@ export function QuestionFormModal({
           order_index: index,
         })),
       }
+
+      let result
 
       if (isEditMode && question) {
         result = await updateQuestion(question.id, formattedData)
@@ -225,15 +222,21 @@ export function QuestionFormModal({
             )}
           </div>
 
-          {/* 問題文 */}
-          <Textarea
-            label="問題文"
-            placeholder="問題文を入力してください"
-            error={errors.question_text?.message}
-            {...register('question_text')}
-            disabled={isSubmitting}
-            rows={4}
-            required
+          {/* 問題文（リッチテキストエディタ） */}
+          <Controller
+            name="question_text"
+            control={control}
+            render={({ field }) => (
+              <RichTextEditor
+                label="問題文"
+                content={field.value}
+                onChange={field.onChange}
+                placeholder="問題文を入力してください。太字、リスト、コードブロックなどが使用できます。"
+                disabled={isSubmitting}
+                error={errors.question_text?.message}
+                required
+              />
+            )}
           />
 
           {/* 単一/複数選択 */}
@@ -260,11 +263,13 @@ export function QuestionFormModal({
                   disabled={isSubmitting}
                   className="w-4 h-4 text-blue-600 focus:ring-blue-500"
                 />
-                <span className="text-sm text-gray-700">複数選択（Phase 1.3bで対応予定）</span>
+                <span className="text-sm text-gray-700">複数選択</span>
               </label>
             </div>
             <p className="text-xs text-gray-500">
-              Phase 1.3aでは単一選択問題のみに対応しています
+              {isMultipleChoice
+                ? '複数の正解を選択できます'
+                : '正解は1つだけ選択してください'}
             </p>
           </div>
 
@@ -336,21 +341,30 @@ export function QuestionFormModal({
               <div>
                 <p className="font-medium text-blue-900">正解の設定方法</p>
                 <p>
-                  各選択肢の左側のチェックボックス/ラジオボタンをクリックして、正解を設定してください。
-                  単一選択問題では1つだけ、複数選択問題では複数選択できます。
+                  各選択肢の左側の{isMultipleChoice ? 'チェックボックス' : 'ラジオボタン'}
+                  をクリックして、正解を設定してください。
+                  {isMultipleChoice
+                    ? '複数選択できます。'
+                    : '1つだけ選択してください。'}
                 </p>
               </div>
             </div>
           </div>
 
-          {/* 解説 */}
-          <Textarea
-            label="解説（任意）"
-            placeholder="問題の解説を入力してください"
-            error={errors.explanation?.message}
-            {...register('explanation')}
-            disabled={isSubmitting}
-            rows={4}
+          {/* 解説（リッチテキストエディタ） */}
+          <Controller
+            name="explanation"
+            control={control}
+            render={({ field }) => (
+              <RichTextEditor
+                label="解説（任意）"
+                content={field.value}
+                onChange={field.onChange}
+                placeholder="問題の解説を入力してください。太字、リスト、コードブロックなどが使用できます。"
+                disabled={isSubmitting}
+                error={errors.explanation?.message}
+              />
+            )}
           />
         </div>
       </form>

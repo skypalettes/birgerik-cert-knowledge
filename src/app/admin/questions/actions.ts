@@ -9,7 +9,6 @@ import {
 } from '@/lib/validations/question'
 import { handleSupabaseError } from '@/lib/errors'
 
-// アクション結果の型定義
 export type ActionResult<T = void> = {
   success: boolean
   data?: T
@@ -24,7 +23,7 @@ export async function createQuestion(
   formData: QuestionFormInput
 ): Promise<ActionResult<{ id: string }>> {
   try {
-    // バリデーション
+    // バリデーション（superRefineで複数選択のチェックも実行される）
     const result = questionFormSchema.safeParse(formData)
 
     if (!result.success) {
@@ -38,17 +37,6 @@ export async function createQuestion(
 
     const validatedData = result.data
     const supabase = await createClient()
-
-    // 単一選択問題の場合、正解が1つだけであることを確認
-    if (!validatedData.is_multiple_choice) {
-      const correctCount = validatedData.choices.filter((c) => c.is_correct).length
-      if (correctCount !== 1) {
-        return {
-          success: false,
-          error: '単一選択問題では正解を1つだけ選択してください',
-        }
-      }
-    }
 
     // explanationが空文字の場合はnullに変換
     const explanation =
@@ -89,10 +77,7 @@ export async function createQuestion(
       .insert(choicesData)
 
     if (choicesError) {
-      // 問題の挿入には成功したが選択肢の挿入に失敗した場合、
-      // 問題も削除してロールバック
       await supabase.from('questions').delete().eq('id', questionData.id)
-
       const appError = handleSupabaseError(choicesError)
       return {
         success: false,
@@ -100,7 +85,6 @@ export async function createQuestion(
       }
     }
 
-    // キャッシュを再検証
     revalidatePath('/admin/questions')
 
     return {
@@ -124,7 +108,6 @@ export async function updateQuestion(
   formData: QuestionFormInput
 ): Promise<ActionResult> {
   try {
-    // バリデーション
     const result = updateQuestionSchema.safeParse({
       id,
       ...formData,
@@ -144,18 +127,6 @@ export async function updateQuestion(
     const validatedData = result.data
     const supabase = await createClient()
 
-    // 単一選択問題の場合、正解が1つだけであることを確認
-    if (!validatedData.is_multiple_choice) {
-      const correctCount = validatedData.choices.filter((c) => c.is_correct).length
-      if (correctCount !== 1) {
-        return {
-          success: false,
-          error: '単一選択問題では正解を1つだけ選択してください',
-        }
-      }
-    }
-
-    // 問題を更新
     const { error: questionError } = await supabase
       .from('questions')
       .update({
@@ -174,7 +145,6 @@ export async function updateQuestion(
       }
     }
 
-    // 既存の選択肢を削除
     const { error: deleteError } = await supabase
       .from('choices')
       .delete()
@@ -188,7 +158,6 @@ export async function updateQuestion(
       }
     }
 
-    // 新しい選択肢を挿入
     const choicesData = validatedData.choices.map((choice, index) => ({
       question_id: validatedData.id,
       choice_text: choice.choice_text,
@@ -208,7 +177,6 @@ export async function updateQuestion(
       }
     }
 
-    // キャッシュを再検証
     revalidatePath('/admin/questions')
 
     return {
@@ -229,8 +197,6 @@ export async function updateQuestion(
 export async function deleteQuestion(id: string): Promise<ActionResult> {
   try {
     const supabase = await createClient()
-
-    // データベースから削除（選択肢はCASCADEで自動削除）
     const { error } = await supabase.from('questions').delete().eq('id', id)
 
     if (error) {
@@ -241,12 +207,8 @@ export async function deleteQuestion(id: string): Promise<ActionResult> {
       }
     }
 
-    // キャッシュを再検証
     revalidatePath('/admin/questions')
-
-    return {
-      success: true,
-    }
+    return { success: true }
   } catch (error) {
     console.error('Error deleting question:', error)
     return {
@@ -257,7 +219,7 @@ export async function deleteQuestion(id: string): Promise<ActionResult> {
 }
 
 /**
- * すべての問題を取得（問題集情報と選択肢を含む）
+ * すべての問題を取得
  */
 export async function getQuestions() {
   try {
@@ -291,7 +253,6 @@ export async function getQuestions() {
       throw appError
     }
 
-    // 選択肢をorder_indexでソート
     const sortedData = data.map((question) => ({
       ...question,
       choices: question.choices?.sort(
@@ -307,7 +268,7 @@ export async function getQuestions() {
 }
 
 /**
- * 特定の問題を取得（選択肢を含む）
+ * 特定の問題を取得
  */
 export async function getQuestion(id: string) {
   try {
@@ -342,7 +303,6 @@ export async function getQuestion(id: string) {
       throw appError
     }
 
-    // 選択肢をorder_indexでソート
     if (data.choices) {
       data.choices.sort((a, b) => (a.order_index || 0) - (b.order_index || 0))
     }
