@@ -44,15 +44,16 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // セッションを取得・更新（重要！）
-  const { data: { session } } = await supabase.auth.getSession()
+  // ✅ getUser()を使用してサーバー側で検証（セキュア）
+  // getSession()はクライアント側のCookieから直接取得するため非推奨
+  const { data: { user }, error } = await supabase.auth.getUser()
 
   // 管理者ルートの保護
   if (request.nextUrl.pathname.startsWith('/admin')) {
     // ログインページの場合
     if (request.nextUrl.pathname === '/admin/login') {
       // すでにログイン済みの場合は管理画面へリダイレクト
-      if (session?.user) {
+      if (user && !error) {
         const redirectUrl = new URL('/admin/certifications', request.url)
         return NextResponse.redirect(redirectUrl)
       }
@@ -61,14 +62,14 @@ export async function middleware(request: NextRequest) {
     }
 
     // 管理画面の他のページの場合
-    // 未ログインの場合はログインページへリダイレクト
-    if (!session?.user) {
+    // 未ログインまたはエラーがある場合はログインページへリダイレクト
+    if (!user || error) {
       const redirectUrl = new URL('/admin/login', request.url)
       return NextResponse.redirect(redirectUrl)
     }
 
     // roleチェック（user_metadataからroleを取得）
-    const userRole = session.user.user_metadata?.role
+    const userRole = user.user_metadata?.role
     if (userRole !== 'admin') {
       // 管理者権限がない場合は403ページへ
       const redirectUrl = new URL('/unauthorized', request.url)

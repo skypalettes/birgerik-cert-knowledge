@@ -1,9 +1,10 @@
 'use client'
 
-import { useFormState, useFormStatus } from 'react-dom'
-import { useEffect } from 'react'
+import { useFormStatus } from 'react-dom'
+import { useActionState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { login, redirectToAdmin, type LoginFormState } from './actions'
+import { login, type LoginFormState } from './actions'
 import { Button } from '@/components/shared/ui/button'
 import { Loader2 } from 'lucide-react'
 
@@ -33,17 +34,19 @@ function SubmitButton() {
 }
 
 export function LoginForm() {
-  const [state, formAction] = useFormState(login, initialState)
+  const router = useRouter()
+  const [state, formAction] = useActionState(login, initialState)
 
   useEffect(() => {
     if (state.success) {
       toast.success('ログインしました')
-      // リダイレクト
-      redirectToAdmin()
+      // クライアント側でリダイレクト
+      router.push('/admin/certifications')
+      router.refresh() // セッション情報を更新
     } else if (state.error) {
       toast.error(state.error)
     }
-  }, [state])
+  }, [state, router])
 
   return (
     <form action={formAction} className="space-y-6">

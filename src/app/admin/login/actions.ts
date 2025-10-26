@@ -50,21 +50,34 @@ export async function login(
     const supabase = await createClient()
 
     // Supabase Authでログイン
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
 
-    if (error) {
-      console.error('Login error:', error)
+    if (signInError) {
+      console.error('Login error:', signInError)
       return {
         success: false,
         error: 'メールアドレスまたはパスワードが正しくありません',
       }
     }
 
+    // ✅ ログイン後、getUser()で再検証（セキュア）
+    // signInWithPasswordの戻り値ではなく、サーバーに問い合わせて検証
+    const { data: { user }, error: getUserError } = await supabase.auth.getUser()
+
+    if (getUserError || !user) {
+      console.error('User verification error:', getUserError)
+      await supabase.auth.signOut()
+      return {
+        success: false,
+        error: 'ユーザー情報の検証に失敗しました',
+      }
+    }
+
     // ユーザーのroleを確認
-    const userRole = data.user?.user_metadata?.role
+    const userRole = user.user_metadata?.role
     if (userRole !== 'admin') {
       // 管理者でない場合はログアウト
       await supabase.auth.signOut()
