@@ -235,6 +235,22 @@ export function QuestionFormModal({
     }
   }, [question, questionSets, reset])
 
+  useEffect(() => {
+    if (isMultipleChoice === false) {
+      // 単一選択に変更された場合、複数の正解があればリセット
+      const correctChoices = watchedValues.choices.filter((c) => c.is_correct)
+      if (correctChoices.length > 1) {
+        // 最初の正解のみ残して他をfalseに
+        watchedValues.choices.forEach((_, index) => {
+          if (index !== watchedValues.choices.findIndex((c) => c.is_correct)) {
+            setValue(`choices.${index}.is_correct`, false)
+          }
+        })
+      }
+    }
+  }, [isMultipleChoice, watchedValues.choices, setValue])
+
+
   const onSubmit = async (data: QuestionFormInput) => {
     setIsSubmitting(true)
 
@@ -395,28 +411,34 @@ export function QuestionFormModal({
               <label className="block text-sm font-medium text-gray-700">
                 問題の種類
               </label>
-              <div className="flex items-center space-x-6">
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    {...register('is_multiple_choice')}
-                    value="false"
-                    disabled={isSubmitting}
-                    className="w-4 h-4 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="text-sm text-gray-700">単一選択</span>
-                </label>
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    {...register('is_multiple_choice')}
-                    value="true"
-                    disabled={isSubmitting}
-                    className="w-4 h-4 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="text-sm text-gray-700">複数選択</span>
-                </label>
-              </div>
+              <Controller
+                name="is_multiple_choice"
+                control={control}
+                render={({ field }) => (
+                  <div className="flex items-center space-x-6">
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        checked={field.value === false}  // boolean値で比較
+                        onChange={() => field.onChange(false)}  // boolean値を直接設定
+                        disabled={isSubmitting}
+                        className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">単一選択</span>
+                    </label>
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        checked={field.value === true}  // boolean値で比較
+                        onChange={() => field.onChange(true)}  // boolean値を直接設定
+                        disabled={isSubmitting}
+                        className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">複数選択</span>
+                    </label>
+                  </div>
+                )}
+              />
               <p className="text-xs text-gray-500">
                 {isMultipleChoice
                   ? '複数の正解を選択できます'
