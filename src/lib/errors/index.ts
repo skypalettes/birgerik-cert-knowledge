@@ -19,7 +19,8 @@ export class DatabaseError extends AppError {
 }
 
 export class ValidationError extends AppError {
-  constructor(message: string, public fields?: Record<string, string>) {
+  // ✅ 修正: string[] に変更
+  constructor(message: string, public fields?: Record<string, string[]>) {
     super(message, 'VALIDATION_ERROR', 400)
   }
 }

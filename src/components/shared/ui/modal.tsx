@@ -3,7 +3,6 @@
 import { ReactNode, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
-import { Button } from './button'
 
 interface ModalProps {
   isOpen: boolean
