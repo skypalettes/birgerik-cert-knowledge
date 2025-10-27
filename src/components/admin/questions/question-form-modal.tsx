@@ -225,14 +225,16 @@ export function QuestionFormModal({
   )
 
   useEffect(() => {
+    if (!isOpen) return
+
     if (question && question.choices) {
       reset({
         question_set_id: question.question_set_id,
-        question_text: question.question_text,
+        question_text: question.question_text || '',
         explanation: question.explanation || '',
         is_multiple_choice: question.is_multiple_choice || false,
         choices: question.choices.map((choice, index) => ({
-          choice_text: choice.choice_text,
+          choice_text: choice.choice_text || '',
           is_correct: choice.is_correct || false,
           order_index: index,
         })),
@@ -249,7 +251,7 @@ export function QuestionFormModal({
         ],
       })
     }
-  }, [question, questionSets, reset])
+  }, [isOpen, question, questionSets, reset, isEditMode])
 
   useEffect(() => {
     if (isMultipleChoice === false) {
@@ -422,6 +424,7 @@ export function QuestionFormModal({
               control={control}
               render={({ field }) => (
                 <RichTextEditor
+                  key={question?.id || 'new'}
                   label="問題文"
                   content={field.value}
                   onChange={field.onChange}
@@ -551,6 +554,7 @@ export function QuestionFormModal({
               control={control}
               render={({ field }) => (
                 <RichTextEditor
+                  key={question?.id ? `${question.id}-explanation` : 'new-explanation'}
                   label="解説（任意）"
                   content={field.value}
                   onChange={field.onChange}
