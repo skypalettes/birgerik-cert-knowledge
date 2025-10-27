@@ -1,13 +1,15 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Edit2, Trash2, FileQuestion, Filter } from 'lucide-react'
+import { Plus, Edit2, Trash2, FileQuestion, Filter, Eye } from 'lucide-react'
 import { Button } from '@/components/shared/ui/button'
 import { Card } from '@/components/shared/ui/card'
 import { Badge } from '@/components/shared/ui/badge'
 import { EmptyState } from '@/components/shared/ui/empty-state'
 import { QuestionFormModal } from '@/components/admin/questions/question-form-modal'
 import { DeleteConfirmationDialog } from '@/components/admin/questions/delete-confirmation-dialog'
+import { getTextPreview, stripHtml } from '@/lib/utils/html'
+import { motion, AnimatePresence } from 'framer-motion'
 
 type QuestionSet = {
   id: string
@@ -50,6 +52,7 @@ export function QuestionList({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [selectedQuestion, setSelectedQuestion] =
     useState<QuestionWithRelations | null>(null)
+  const [expandedQuestionId, setExpandedQuestionId] = useState<string | null>(null)
 
   const handleRefresh = () => {
     window.location.reload()
@@ -89,6 +92,12 @@ export function QuestionList({
     return question.choices
       .filter((c) => c.is_correct)
       .map((c) => c.choice_text)
+  }
+
+  const toggleExpand = (questionId: string) => {
+    setExpandedQuestionId(
+      expandedQuestionId === questionId ? null : questionId
+    )
   }
 
   return (
@@ -155,6 +164,10 @@ export function QuestionList({
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {filteredQuestions.map((question) => {
             const correctChoices = getCorrectChoices(question)
+            const isExpanded = expandedQuestionId === question.id
+            const questionPreview = getTextPreview(question.question_text, 150)
+            const fullQuestionText = stripHtml(question.question_text)
+            const hasMore = fullQuestionText.length > 150
 
             return (
               <Card
@@ -192,9 +205,43 @@ export function QuestionList({
                     <h3 className="text-sm font-semibold text-gray-700 mb-2">
                       問題文
                     </h3>
-                    <p className="text-sm text-gray-900 line-clamp-3">
-                      {question.question_text}
-                    </p>
+                    <div className="text-sm text-gray-900">
+                      <AnimatePresence mode="wait">
+                        {isExpanded ? (
+                          <motion.div
+                            key="expanded"
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="whitespace-pre-wrap"
+                          >
+                            {fullQuestionText}
+                          </motion.div>
+                        ) : (
+                          <motion.div
+                            key="collapsed"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="whitespace-pre-wrap"
+                          >
+                            {questionPreview}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                      
+                      {hasMore && (
+                        <button
+                          onClick={() => toggleExpand(question.id)}
+                          className="mt-2 text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                        >
+                          <Eye className="h-3 w-3" />
+                          {isExpanded ? '閉じる' : 'もっと見る'}
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {/* 選択肢数 */}
