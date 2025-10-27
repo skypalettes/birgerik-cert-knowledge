@@ -21,7 +21,7 @@ export default function PracticePage() {
   
   const certificationId = params.certificationId as string
   const questionSetId = params.questionSetId as string
-  const mode = searchParams.get('mode') as 'sequential' | 'random' | null
+  const mode = searchParams.get('mode') as 'sequential' | 'random' | 'review' | null
   
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -57,6 +57,17 @@ export default function PracticePage() {
       if (!mode) {
         setError('学習モードが指定されていません')
         return
+      }
+
+      // 復習モードの場合は既存セッションを使用
+      if (mode === 'review') {
+        if (isSessionActive && questions.length > 0) {
+          setIsLoading(false)
+          return
+        } else {
+          setError('復習する問題がありません')
+          return
+        }
       }
       
       // 既存のセッションがある場合は継続

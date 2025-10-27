@@ -83,6 +83,9 @@ interface StudyState {
   getScore: () => { correct: number; total: number; percentage: number }
   isLastQuestion: () => boolean
   isFirstQuestion: () => boolean
+
+  getWrongQuestions: () => Question[]
+  startReviewSession: () => void
 }
 
 /**
@@ -277,6 +280,42 @@ export const useStudyStore = create<StudyState>()(
       isFirstQuestion: () => {
         const { currentIndex } = get()
         return currentIndex === 0
+      },
+
+      // 間違えた問題を取得
+      getWrongQuestions: () => {
+        const { questions, answerHistory } = get()
+        
+        // 間違えた問題のIDを取得
+        const wrongQuestionIds = answerHistory
+          .filter(h => !h.isCorrect)
+          .map(h => h.questionId)
+        
+        // 重複を除去
+        const uniqueWrongIds = Array.from(new Set(wrongQuestionIds))
+        
+        // 間違えた問題のみ返す
+        return questions.filter(q => uniqueWrongIds.includes(q.id))
+      },
+
+      // 間違えた問題で復習セッションを開始
+      startReviewSession: () => {
+        const wrongQuestions = get().getWrongQuestions()
+        
+        if (wrongQuestions.length === 0) {
+          console.warn('復習する問題がありません')
+          return
+        }
+
+        // 現在のセッション情報を保持しつつ、問題だけ置き換え
+        set({
+          questions: wrongQuestions,
+          currentIndex: 0,
+          selectedChoiceIds: [],
+          answerHistory: [], // 復習用の新しい履歴
+          isAnswerSubmitted: false,
+          showExplanation: false,
+        })
       },
     }),
     {

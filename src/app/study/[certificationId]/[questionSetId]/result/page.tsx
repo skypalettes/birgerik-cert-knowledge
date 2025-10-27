@@ -1,12 +1,15 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
-import { Trophy, RotateCcw, Home, ArrowLeft } from 'lucide-react'
+import { Trophy, RotateCcw, Home, BookOpen, Target, Clock } from 'lucide-react'
 import { Button } from '@/components/shared/ui/button'
 import { useStudyStore } from '@/store/study-store'
 import { motion } from 'framer-motion'
+import { WrongQuestionsList } from '@/components/study/wrong-questions-list'
+import { QuestionDetailModal } from '@/components/study/question-detail-modal'
+import type { Question } from '@/store/study-store'
 
 export default function ResultPage() {
   const router = useRouter()
@@ -18,10 +21,12 @@ export default function ResultPage() {
     isSessionActive, 
     getScore, 
     endSession,
-    startSession,
-    questions,
     mode,
+    getWrongQuestions,
+    startReviewSession,
   } = useStudyStore()
+  
+  const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null)
   
   // セッションがない場合はリダイレクト
   useEffect(() => {
@@ -36,6 +41,7 @@ export default function ResultPage() {
   
   const score = getScore()
   const percentage = score.percentage
+  const wrongQuestions = getWrongQuestions()
   
   // パフォーマンス評価
   const getPerformanceMessage = () => {
@@ -53,8 +59,12 @@ export default function ResultPage() {
   }
   
   const handleRetry = () => {
-    // 同じモードで再挑戦
     router.push(`/study/${certificationId}/${questionSetId}/practice?mode=${mode}`)
+  }
+  
+  const handleReview = () => {
+    startReviewSession()
+    router.push(`/study/${certificationId}/${questionSetId}/practice?mode=review`)
   }
   
   const handleFinish = () => {
@@ -63,45 +73,106 @@ export default function ResultPage() {
   }
   
   return (
-    <div className="container mx-auto px-4 py-8 max-w-3xl">
+    <div className="container mx-auto px-4 py-8 max-w-4xl">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="text-center"
       >
-        {/* トロフィーアイコン */}
-        <div className="flex justify-center mb-6">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-            className="w-24 h-24 bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-full flex items-center justify-center"
-          >
-            <Trophy className="w-12 h-12 text-yellow-600" />
-          </motion.div>
-        </div>
-        
-        {/* タイトル */}
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">
-          学習完了！
-        </h1>
-        <p className={`text-2xl font-semibold mb-8 ${getPerformanceColor()}`}>
-          {getPerformanceMessage()}
-        </p>
-        
-        {/* スコア表示 */}
-        <div className="bg-white rounded-2xl shadow-lg p-8 mb-8">
-          <div className="mb-6">
-            <div className="text-6xl font-bold text-gray-900 mb-2">
-              {percentage}%
-            </div>
-            <p className="text-gray-600">
-              {score.correct} / {score.total} 問正解
-            </p>
+        {/* ヘッダー */}
+        <div className="text-center mb-8">
+          {/* トロフィーアイコン */}
+          <div className="flex justify-center mb-6">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
+              className={`w-24 h-24 rounded-full flex items-center justify-center ${
+                percentage >= 80
+                  ? 'bg-gradient-to-br from-yellow-100 to-yellow-200'
+                  : percentage >= 60
+                  ? 'bg-gradient-to-br from-blue-100 to-blue-200'
+                  : 'bg-gradient-to-br from-gray-100 to-gray-200'
+              }`}
+            >
+              <Trophy
+                className={`w-12 h-12 ${
+                  percentage >= 80
+                    ? 'text-yellow-600'
+                    : percentage >= 60
+                    ? 'text-blue-600'
+                    : 'text-gray-600'
+                }`}
+              />
+            </motion.div>
           </div>
           
-          {/* プログレスリング風の表示 */}
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+            学習完了！
+          </h1>
+          <p className={`text-2xl font-semibold mb-4 ${getPerformanceColor()}`}>
+            {getPerformanceMessage()}
+          </p>
+        </div>
+
+        {/* スコアカード */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          {/* 正答率 */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="bg-white rounded-xl shadow-lg p-6 border border-gray-200"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <Target className="h-6 w-6 text-blue-600" />
+            </div>
+            <div className="text-3xl font-bold text-gray-900 mb-1">
+              {percentage}%
+            </div>
+            <p className="text-sm text-gray-600">正答率</p>
+          </motion.div>
+
+          {/* 正解数 */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="bg-white rounded-xl shadow-lg p-6 border border-gray-200"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <BookOpen className="h-6 w-6 text-green-600" />
+            </div>
+            <div className="text-3xl font-bold text-gray-900 mb-1">
+              {score.correct} / {score.total}
+            </div>
+            <p className="text-sm text-gray-600">正解数</p>
+          </motion.div>
+
+          {/* モード */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="bg-white rounded-xl shadow-lg p-6 border border-gray-200"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <Clock className="h-6 w-6 text-purple-600" />
+            </div>
+            <div className="text-xl font-bold text-gray-900 mb-1">
+              {mode === 'sequential' ? '順番' : 'ランダム'}
+            </div>
+            <p className="text-sm text-gray-600">学習モード</p>
+          </motion.div>
+        </div>
+
+        {/* プログレスリング */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6 }}
+          className="bg-white rounded-2xl shadow-lg p-8 mb-8"
+        >
           <div className="relative w-48 h-48 mx-auto">
             <svg className="transform -rotate-90" viewBox="0 0 200 200">
               {/* 背景の円 */}
@@ -118,53 +189,74 @@ export default function ResultPage() {
                 cx="100"
                 cy="100"
                 r="80"
-                stroke={percentage >= 80 ? '#10b981' : percentage >= 60 ? '#3b82f6' : '#f59e0b'}
+                stroke={
+                  percentage >= 80
+                    ? '#10b981'
+                    : percentage >= 60
+                    ? '#3b82f6'
+                    : '#f59e0b'
+                }
                 strokeWidth="20"
                 fill="none"
                 strokeLinecap="round"
                 initial={{ strokeDasharray: '0 502' }}
                 animate={{ strokeDasharray: `${502 * (percentage / 100)} 502` }}
-                transition={{ duration: 1, delay: 0.5 }}
+                transition={{ duration: 1, delay: 0.7 }}
               />
             </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center">
+                <div className="text-4xl font-bold text-gray-900">
+                  {percentage}%
+                </div>
+                <div className="text-sm text-gray-600 mt-1">達成率</div>
+              </div>
+            </div>
           </div>
-        </div>
-        
-        {/* Phase 3.3実装予定の機能 */}
-        <div className="bg-blue-50 rounded-xl p-6 border border-blue-100 mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Phase 3.3で追加予定
-          </h2>
-          <ul className="text-sm text-gray-700 space-y-2 text-left max-w-md mx-auto">
-            <li className="flex items-start">
-              <span className="text-blue-600 mr-2">✓</span>
-              <span>詳細な成績分析（正答率グラフ）</span>
-            </li>
-            <li className="flex items-start">
-              <span className="text-blue-600 mr-2">✓</span>
-              <span>間違えた問題の一覧表示</span>
-            </li>
-            <li className="flex items-start">
-              <span className="text-blue-600 mr-2">✓</span>
-              <span>復習機能（間違えた問題のみ再挑戦）</span>
-            </li>
-            <li className="flex items-start">
-              <span className="text-blue-600 mr-2">✓</span>
-              <span>学習記録の保存</span>
-            </li>
-          </ul>
-        </div>
-        
+        </motion.div>
+
+        {/* 間違えた問題一覧 */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8 }}
+          className="mb-8"
+        >
+          <WrongQuestionsList
+            wrongQuestions={wrongQuestions}
+            onViewQuestion={setSelectedQuestion}
+          />
+        </motion.div>
+
         {/* アクションボタン */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.9 }}
+          className="flex flex-col sm:flex-row gap-4 justify-center"
+        >
+          {wrongQuestions.length > 0 && (
+            <Button
+              onClick={handleReview}
+              size="lg"
+              variant="primary"
+              className="w-full sm:w-auto"
+            >
+              <BookOpen className="h-5 w-5 mr-2" />
+              間違えた問題を復習
+            </Button>
+          )}
+          
           <Button
             onClick={handleRetry}
             size="lg"
+            variant={wrongQuestions.length > 0 ? 'secondary' : 'primary'}
             className="w-full sm:w-auto"
           >
             <RotateCcw className="h-5 w-5 mr-2" />
             もう一度挑戦
           </Button>
+          
           <Button
             variant="outline"
             onClick={handleFinish}
@@ -174,12 +266,20 @@ export default function ResultPage() {
             <Home className="h-5 w-5 mr-2" />
             学習モードトップへ
           </Button>
-        </div>
-        
-        <div className="mt-8 text-sm text-gray-500">
-          Phase 3.2完了 - 学習画面実装完了！
+        </motion.div>
+
+        {/* Phase情報 */}
+        <div className="mt-8 text-center text-sm text-gray-500">
+          Phase 3.3完了 - 結果画面実装完了！
         </div>
       </motion.div>
+
+      {/* 問題詳細モーダル */}
+      <QuestionDetailModal
+        question={selectedQuestion}
+        isOpen={selectedQuestion !== null}
+        onClose={() => setSelectedQuestion(null)}
+      />
     </div>
   )
 }
