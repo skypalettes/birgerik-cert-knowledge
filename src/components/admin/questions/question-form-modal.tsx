@@ -76,6 +76,7 @@ function SortableChoiceItem({
   id,
   index,
   isMultipleChoice,
+  control,
   register,
   errors,
   isSubmitting,
@@ -86,6 +87,7 @@ function SortableChoiceItem({
   id: string
   index: number
   isMultipleChoice: boolean
+  control: any
   register: any
   errors: any
   isSubmitting: boolean
@@ -127,19 +129,24 @@ function SortableChoiceItem({
 
       {/* 正解チェック */}
       <div className="flex items-center pt-2">
-        <input
-          type={isMultipleChoice ? 'checkbox' : 'radio'}
-          {...register(`choices.${index}.is_correct`, {
-            onChange: () => {
-              // ← 追加: 単一選択時に他の選択を解除
-              if (!isMultipleChoice) {
-                onCorrectChange(index)
-              }
-            },
-          })}
-          disabled={isSubmitting}
-          className="w-5 h-5 text-green-600 focus:ring-green-500"
-          title="正解として設定"
+        <Controller
+          name={`choices.${index}.is_correct`}
+          control={control}  // ← 追加: controlをpropsから受け取る必要があります
+          render={({ field }) => (
+            <input
+              type={isMultipleChoice ? 'checkbox' : 'radio'}
+              checked={field.value || false}  // ← 追加: checked属性で明示的に制御
+              onChange={(e) => {
+                field.onChange(e.target.checked)
+                if (!isMultipleChoice) {
+                  onCorrectChange(index)
+                }
+              }}
+              disabled={isSubmitting}
+              className="w-5 h-5 text-green-600 focus:ring-green-500"
+              title="正解として設定"
+            />
+          )}
         />
       </div>
 
@@ -500,6 +507,7 @@ export function QuestionFormModal({
                         id={field.id}
                         index={index}
                         isMultipleChoice={isMultipleChoice}
+                        control={control}
                         register={register}
                         errors={errors}
                         isSubmitting={isSubmitting}
