@@ -1,13 +1,17 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import {
   certificationFormSchema,
-  updateCertificationSchema,
   type CertificationFormInput,
 } from '@/lib/validations/certification'
-import { handleSupabaseError } from '@/lib/errors'
+import {
+  getCertifications as dbGetCertifications,
+  getCertification as dbGetCertification,
+  createCertification as dbCreateCertification,
+  updateCertification as dbUpdateCertification,
+  deleteCertification as dbDeleteCertification,
+} from '@/lib/database/certifications'
 
 // アクション結果の型定義
 export type ActionResult<T = void> = {
@@ -26,7 +30,7 @@ export async function createCertification(
   try {
     // バリデーション（safeParse使用）
     const result = certificationFormSchema.safeParse(formData)
-    
+
     if (!result.success) {
       // Zodのエラーをフィールドエラー形式に変換
       const fieldErrors = result.error.flatten().fieldErrors
@@ -37,39 +41,17 @@ export async function createCertification(
       }
     }
 
-    const validatedData = result.data
-    const supabase = await createClient()
+    // lib/database の関数を呼び出し
+    const dbResult = await dbCreateCertification(result.data)
 
-    // descriptionが空文字の場合はnullに変換
-    const description = validatedData.description.trim() === '' 
-      ? null 
-      : validatedData.description
-
-    // データベースに挿入
-    const { data, error } = await supabase
-      .from('certifications')
-      .insert({
-        name: validatedData.name,
-        description,
-      })
-      .select('id')
-      .single()
-
-    if (error) {
-      const appError = handleSupabaseError(error)
-      return {
-        success: false,
-        error: appError.message,
-      }
+    if (!dbResult.success) {
+      return dbResult
     }
 
     // キャッシュを再検証
     revalidatePath('/admin/certifications')
 
-    return {
-      success: true,
-      data: { id: data.id },
-    }
+    return dbResult
   } catch (error) {
     console.error('Error creating certification:', error)
     return {
@@ -87,50 +69,23 @@ export async function updateCertification(
   formData: CertificationFormInput
 ): Promise<ActionResult> {
   try {
-    // バリデーション（safeParse使用）
-    const result = updateCertificationSchema.safeParse({
-      id,
+    // descriptionの空文字をnullに変換
+    const input = {
       ...formData,
-      // descriptionの空文字をnullに変換
       description: formData.description.trim() === '' ? null : formData.description,
-    })
-    
-    if (!result.success) {
-      // Zodのエラーをフィールドエラー形式に変換
-      const fieldErrors = result.error.flatten().fieldErrors
-      return {
-        success: false,
-        error: '入力内容に誤りがあります',
-        fieldErrors: fieldErrors as Record<string, string[]>,
-      }
     }
 
-    const validatedData = result.data
-    const supabase = await createClient()
+    // lib/database の関数を呼び出し
+    const dbResult = await dbUpdateCertification(id, input)
 
-    // データベースを更新
-    const { error } = await supabase
-      .from('certifications')
-      .update({
-        name: validatedData.name,
-        description: validatedData.description,
-      })
-      .eq('id', validatedData.id)
-
-    if (error) {
-      const appError = handleSupabaseError(error)
-      return {
-        success: false,
-        error: appError.message,
-      }
+    if (!dbResult.success) {
+      return dbResult
     }
 
     // キャッシュを再検証
     revalidatePath('/admin/certifications')
 
-    return {
-      success: true,
-    }
+    return dbResult
   } catch (error) {
     console.error('Error updating certification:', error)
     return {
@@ -147,50 +102,17 @@ export async function deleteCertification(
   id: string
 ): Promise<ActionResult> {
   try {
-    const supabase = await createClient()
+    // lib/database の関数を呼び出し
+    const dbResult = await dbDeleteCertification(id)
 
-    // 関連する問題集があるか確認
-    const { count, error: countError } = await supabase
-      .from('question_sets')
-      .select('*', { count: 'exact', head: true })
-      .eq('certification_id', id)
-
-    if (countError) {
-      const appError = handleSupabaseError(countError)
-      return {
-        success: false,
-        error: appError.message,
-      }
-    }
-
-    // 問題集が存在する場合は削除不可
-    if (count && count > 0) {
-      return {
-        success: false,
-        error: `この資格には${count}件の問題集が紐付いています。先に問題集を削除してください。`,
-      }
-    }
-
-    // データベースから削除
-    const { error } = await supabase
-      .from('certifications')
-      .delete()
-      .eq('id', id)
-
-    if (error) {
-      const appError = handleSupabaseError(error)
-      return {
-        success: false,
-        error: appError.message,
-      }
+    if (!dbResult.success) {
+      return dbResult
     }
 
     // キャッシュを再検証
     revalidatePath('/admin/certifications')
 
-    return {
-      success: true,
-    }
+    return dbResult
   } catch (error) {
     console.error('Error deleting certification:', error)
     return {
@@ -205,22 +127,8 @@ export async function deleteCertification(
  */
 export async function getCertifications() {
   try {
-    const supabase = await createClient()
-
-    const { data, error } = await supabase
-      .from('certifications')
-      .select(`
-        *,
-        question_sets (count)
-      `)
-      .order('created_at', { ascending: false })
-
-    if (error) {
-      const appError = handleSupabaseError(error)
-      throw appError
-    }
-
-    return data
+    // lib/database の関数を呼び出し
+    return await dbGetCertifications()
   } catch (error) {
     console.error('Error fetching certifications:', error)
     throw error
@@ -232,20 +140,8 @@ export async function getCertifications() {
  */
 export async function getCertification(id: string) {
   try {
-    const supabase = await createClient()
-
-    const { data, error } = await supabase
-      .from('certifications')
-      .select('*')
-      .eq('id', id)
-      .single()
-
-    if (error) {
-      const appError = handleSupabaseError(error)
-      throw appError
-    }
-
-    return data
+    // lib/database の関数を呼び出し
+    return await dbGetCertification(id)
   } catch (error) {
     console.error('Error fetching certification:', error)
     throw error

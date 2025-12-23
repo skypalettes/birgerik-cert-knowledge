@@ -1,13 +1,19 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import {
   questionSetFormSchema,
-  updateQuestionSetSchema,
   type QuestionSetFormInput,
 } from '@/lib/validations/question-set'
-import { handleSupabaseError } from '@/lib/errors'
+import {
+  getQuestionSets as dbGetQuestionSets,
+  getQuestionSet as dbGetQuestionSet,
+  createQuestionSet as dbCreateQuestionSet,
+  updateQuestionSet as dbUpdateQuestionSet,
+  deleteQuestionSet as dbDeleteQuestionSet,
+  getQuestionSetsForSelect as dbGetQuestionSetsForSelect,
+} from '@/lib/database/question-sets'
+import { getCertificationsForSelect as dbGetCertificationsForSelect } from '@/lib/database/certifications'
 
 // アクション結果の型定義
 export type ActionResult<T = void> = {
@@ -26,7 +32,7 @@ export async function createQuestionSet(
   try {
     // バリデーション
     const result = questionSetFormSchema.safeParse(formData)
-    
+
     if (!result.success) {
       const fieldErrors = result.error.flatten().fieldErrors
       return {
@@ -36,40 +42,17 @@ export async function createQuestionSet(
       }
     }
 
-    const validatedData = result.data
-    const supabase = await createClient()
+    // lib/database の関数を呼び出し
+    const dbResult = await dbCreateQuestionSet(result.data)
 
-    // descriptionが空文字の場合はnullに変換
-    const description = validatedData.description.trim() === '' 
-      ? null 
-      : validatedData.description
-
-    // データベースに挿入
-    const { data, error } = await supabase
-      .from('question_sets')
-      .insert({
-        name: validatedData.name,
-        description,
-        certification_id: validatedData.certification_id,
-      })
-      .select('id')
-      .single()
-
-    if (error) {
-      const appError = handleSupabaseError(error)
-      return {
-        success: false,
-        error: appError.message,
-      }
+    if (!dbResult.success) {
+      return dbResult
     }
 
     // キャッシュを再検証
     revalidatePath('/admin/question-sets')
 
-    return {
-      success: true,
-      data: { id: data.id },
-    }
+    return dbResult
   } catch (error) {
     console.error('Error creating question set:', error)
     return {
@@ -87,49 +70,23 @@ export async function updateQuestionSet(
   formData: QuestionSetFormInput
 ): Promise<ActionResult> {
   try {
-    // バリデーション
-    const result = updateQuestionSetSchema.safeParse({
-      id,
+    // descriptionの空文字をnullに変換
+    const input = {
       ...formData,
       description: formData.description.trim() === '' ? null : formData.description,
-    })
-    
-    if (!result.success) {
-      const fieldErrors = result.error.flatten().fieldErrors
-      return {
-        success: false,
-        error: '入力内容に誤りがあります',
-        fieldErrors: fieldErrors as Record<string, string[]>,
-      }
     }
 
-    const validatedData = result.data
-    const supabase = await createClient()
+    // lib/database の関数を呼び出し
+    const dbResult = await dbUpdateQuestionSet(id, input)
 
-    // データベースを更新
-    const { error } = await supabase
-      .from('question_sets')
-      .update({
-        name: validatedData.name,
-        description: validatedData.description,
-        certification_id: validatedData.certification_id,
-      })
-      .eq('id', validatedData.id)
-
-    if (error) {
-      const appError = handleSupabaseError(error)
-      return {
-        success: false,
-        error: appError.message,
-      }
+    if (!dbResult.success) {
+      return dbResult
     }
 
     // キャッシュを再検証
     revalidatePath('/admin/question-sets')
 
-    return {
-      success: true,
-    }
+    return dbResult
   } catch (error) {
     console.error('Error updating question set:', error)
     return {
@@ -146,50 +103,17 @@ export async function deleteQuestionSet(
   id: string
 ): Promise<ActionResult> {
   try {
-    const supabase = await createClient()
+    // lib/database の関数を呼び出し
+    const dbResult = await dbDeleteQuestionSet(id)
 
-    // 関連する問題があるか確認
-    const { count, error: countError } = await supabase
-      .from('questions')
-      .select('*', { count: 'exact', head: true })
-      .eq('question_set_id', id)
-
-    if (countError) {
-      const appError = handleSupabaseError(countError)
-      return {
-        success: false,
-        error: appError.message,
-      }
-    }
-
-    // 問題が存在する場合は削除不可
-    if (count && count > 0) {
-      return {
-        success: false,
-        error: `この問題集には${count}件の問題が紐付いています。先に問題を削除してください。`,
-      }
-    }
-
-    // データベースから削除
-    const { error } = await supabase
-      .from('question_sets')
-      .delete()
-      .eq('id', id)
-
-    if (error) {
-      const appError = handleSupabaseError(error)
-      return {
-        success: false,
-        error: appError.message,
-      }
+    if (!dbResult.success) {
+      return dbResult
     }
 
     // キャッシュを再検証
     revalidatePath('/admin/question-sets')
 
-    return {
-      success: true,
-    }
+    return dbResult
   } catch (error) {
     console.error('Error deleting question set:', error)
     return {
@@ -204,26 +128,8 @@ export async function deleteQuestionSet(
  */
 export async function getQuestionSets() {
   try {
-    const supabase = await createClient()
-
-    const { data, error } = await supabase
-      .from('question_sets')
-      .select(`
-        *,
-        certification:certifications (
-          id,
-          name
-        ),
-        questions (count)
-      `)
-      .order('created_at', { ascending: false })
-
-    if (error) {
-      const appError = handleSupabaseError(error)
-      throw appError
-    }
-
-    return data
+    // lib/database の関数を呼び出し
+    return await dbGetQuestionSets()
   } catch (error) {
     console.error('Error fetching question sets:', error)
     throw error
@@ -235,26 +141,8 @@ export async function getQuestionSets() {
  */
 export async function getQuestionSet(id: string) {
   try {
-    const supabase = await createClient()
-
-    const { data, error } = await supabase
-      .from('question_sets')
-      .select(`
-        *,
-        certification:certifications (
-          id,
-          name
-        )
-      `)
-      .eq('id', id)
-      .single()
-
-    if (error) {
-      const appError = handleSupabaseError(error)
-      throw appError
-    }
-
-    return data
+    // lib/database の関数を呼び出し
+    return await dbGetQuestionSet(id)
   } catch (error) {
     console.error('Error fetching question set:', error)
     throw error
@@ -266,19 +154,8 @@ export async function getQuestionSet(id: string) {
  */
 export async function getCertificationsForSelect() {
   try {
-    const supabase = await createClient()
-
-    const { data, error } = await supabase
-      .from('certifications')
-      .select('id, name')
-      .order('name', { ascending: true })
-
-    if (error) {
-      const appError = handleSupabaseError(error)
-      throw appError
-    }
-
-    return data
+    // lib/database の関数を呼び出し
+    return await dbGetCertificationsForSelect()
   } catch (error) {
     console.error('Error fetching certifications:', error)
     throw error
