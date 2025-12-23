@@ -1,16 +1,12 @@
-# CLAUDE.MD - Birgerik リポジトリ構成ガイド
-
-このドキュメントは、Birgerik（資格試験学習プラットフォーム）の構成情報をまとめたものです。
+# CLAUDE.MD - Birgerik 開発ガイド
 
 ## プロジェクト概要
 
-Birgerikは、資格試験の学習を支援するフルスタックWebアプリケーションです。
-学習者向けの学習インターフェースと、管理者向けの問題管理システムを提供します。
+Birgerikは資格試験学習プラットフォームです。**ハイブリッドアーキテクチャ**を採用し、Webアプリ（Server Actions）と外部クライアント（REST API）の両方をサポートします。
 
-**主要機能:**
-- 学習モード（順次/ランダム）
-- 試験モード（時間制限付き）
-- 管理画面（資格/問題セット/問題のCRUD）
+**アーキテクチャ目標:**
+- Webアプリ: Next.js Server Actionsで高速なUIを提供
+- 外部クライアント: REST APIでObsidianプラグインなどのサードパーティ統合を実現
 
 ## 技術スタック
 
@@ -18,179 +14,258 @@ Birgerikは、資格試験の学習を支援するフルスタックWebアプリ
 |---------|------|
 | フレームワーク | Next.js 15.5.6 (App Router) |
 | 言語 | TypeScript 5 |
-| UI | React 19.1.0, Tailwind CSS 4 |
-| バックエンド | Supabase (PostgreSQL + Auth) |
+| データベース | Supabase PostgreSQL |
+| 認証 | Supabase Auth (Web) + JWT (API) |
+| キャッシング | Next.js unstable_cache (60秒) |
+| UI | React 19, Tailwind CSS 4 |
 | 状態管理 | Zustand 5.0.8 |
-| フォーム | React Hook Form 7 + Zod 4 |
-| リッチテキスト | Tiptap 3.8.0 |
-| アイコン | Lucide React |
 
-## ディレクトリ構造
+## ディレクトリ構造（重要）
 
 ```
-birgerik/
-├── src/
-│   ├── app/                    # Next.js App Router ページ
-│   │   ├── page.tsx           # ホームページ
-│   │   ├── study/             # 学習モード
-│   │   ├── exam/              # 試験モード
-│   │   └── admin/             # 管理画面
-│   ├── components/            # React コンポーネント
-│   │   ├── shared/            # 共通コンポーネント
-│   │   ├── study/             # 学習画面用
-│   │   └── admin/             # 管理画面用
-│   ├── lib/                   # ライブラリとユーティリティ
-│   │   ├── actions/           # Server Actions
-│   │   ├── supabase/          # Supabase クライアント
-│   │   ├── types/             # 型定義
-│   │   ├── validations/       # Zod スキーマ
-│   │   ├── errors/            # エラーハンドリング
-│   │   └── utils/             # ユーティリティ関数
-│   ├── store/                 # Zustand ストア
-│   └── middleware.ts          # 認証ミドルウェア
-├── public/                    # 静的アセット
-└── [設定ファイル]
+src/
+├── app/
+│   ├── api/v1/                    # REST API エンドポイント
+│   │   ├── auth/                  # 認証 (login, me)
+│   │   ├── certifications/        # 資格CRUD
+│   │   ├── question-sets/         # 問題セットCRUD
+│   │   ├── questions/             # 問題CRUD
+│   │   └── study/                 # 学習用エンドポイント
+│   ├── study/                     # 学習モードUI
+│   ├── exam/                      # 試験モードUI
+│   └── admin/                     # 管理画面UI
+├── lib/
+│   ├── api/                       # REST API共通機能
+│   │   ├── middleware.ts          # JWT認証ミドルウェア
+│   │   └── response.ts            # レスポンスヘルパー
+│   ├── auth/
+│   │   └── jwt.ts                 # JWT生成・検証
+│   ├── database/                  # データベース層（共通）
+│   │   ├── certifications.ts
+│   │   ├── question-sets.ts
+│   │   ├── questions.ts
+│   │   └── study.ts               # 学習用最適化クエリ
+│   ├── actions/                   # Server Actions（Web専用）
+│   └── supabase/
+│       ├── server.ts              # Server用クライアント
+│       └── client.ts              # Client用クライアント
+└── store/                         # Zustand状態管理
 ```
 
-## 重要な設定ファイル
-
-| ファイル | 用途 |
-|---------|-----|
-| `package.json` | 依存関係とスクリプト |
-| `tsconfig.json` | TypeScript設定（`@/*` → `./src/*`） |
-| `next.config.ts` | Next.js設定 |
-| `.env.local.example` | 環境変数テンプレート |
-
-## 開発コマンド
+## 開発環境セットアップ
 
 ```bash
-# 開発サーバー起動
-npm run dev
+# 依存関係インストール
+pnpm install
 
-# ビルド
-npm run build
-
-# 本番サーバー起動
-npm start
-
-# Linter実行
-npm run lint
-
-# Supabase型定義生成
-npm run types:generate
-```
-
-## ルーティング構造
-
-### ユーザー向け
-- `/` - ホーム
-- `/study` - 資格一覧
-- `/study/[certificationId]` - 問題セット選択
-- `/study/[certificationId]/[questionSetId]/mode-select` - モード選択
-- `/study/[certificationId]/[questionSetId]/practice` - 学習画面
-- `/study/[certificationId]/[questionSetId]/result` - 結果表示
-- `/exam` - 試験モード
-
-### 管理者向け
-- `/admin/login` - ログイン
-- `/admin/certifications` - 資格管理
-- `/admin/question-sets` - 問題セット管理
-- `/admin/questions` - 問題管理
-
-## データベース構造（Supabase）
-
-主要テーブル:
-- `certifications` - 資格情報
-- `question_sets` - 問題セット
-- `questions` - 問題
-- `choices` - 選択肢
-- `auth.users` - ユーザー（メタデータにroleフィールド）
-
-## 認証・認可
-
-- **システム:** Supabase Authentication
-- **方式:** Email/Password
-- **保護:** Middleware（`src/middleware.ts`）で `/admin/*` を保護
-- **ロール:** メタデータの `role` フィールドで管理者判定
-
-## 状態管理パターン
-
-**Zustand + SessionStorage:**
-- `src/store/study-store.ts` で学習セッション管理
-- 問題の状態、回答履歴、進捗を保持
-- ブラウザリフレッシュで復元可能
-
-## 主要なアーキテクチャパターン
-
-1. **Server Components** - デフォルトでサーバーレンダリング
-2. **Server Actions** - `lib/actions/` でデータ取得・更新
-3. **Client Components** - インタラクティブな部分のみ
-4. **Zod Validation** - フォームとAPIのバリデーション統一
-
-## 拡張開発のポイント
-
-### 新機能追加時の手順
-
-1. **新しいページ追加:**
-   - `src/app/` に新しいルートを作成
-   - 必要に応じて `layout.tsx` を追加
-
-2. **新しいコンポーネント追加:**
-   - 共通: `src/components/shared/`
-   - 機能別: `src/components/[feature]/`
-
-3. **データベース操作追加:**
-   - Server Actionを `src/lib/actions/` に作成
-   - Zod スキーマを `src/lib/validations/` に定義
-
-4. **型定義更新:**
-   - Supabase テーブル変更後、`npm run types:generate` を実行
-
-5. **新しい状態管理追加:**
-   - `src/store/` に新しいストアを作成（必要に応じて）
-
-### コーディング規約
-
-- **コンポーネント名:** PascalCase (`QuestionCard.tsx`)
-- **ファイル名:** kebab-case (`question-card.tsx`)
-- **関数名:** camelCase
-- **エラーハンドリング:** `lib/errors/` のカスタムエラークラス使用
-- **スタイリング:** Tailwind CSS クラス使用
-
-### 注意点
-
-- **Server/Client境界:** `'use client'` は必要最小限に
-- **認証:** 保護ルート追加時は `middleware.ts` を更新
-- **型安全性:** `any` 型の使用を避け、適切な型定義を行う
-- **バリデーション:** 必ずZodスキーマでバリデーション
-
-## 環境変数
-
-`.env.local` に以下を設定:
-```
+# 環境変数設定（.env.local）
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+JWT_SECRET=your-jwt-secret-32-chars-minimum
+ALLOWED_ORIGINS=http://localhost:3000
+
+# 開発サーバー起動
+pnpm dev
+
+# TypeScript型チェック
+pnpm tsc --noEmit
+
+# Lint
+pnpm lint
+
+# ビルド
+pnpm build
 ```
+
+## REST API 認証
+
+### ログイン
+```bash
+POST /api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "password"
+}
+
+# Response
+{
+  "success": true,
+  "data": {
+    "token": "eyJhbGc...",
+    "user": { "id": "...", "email": "..." }
+  }
+}
+```
+
+### 認証ヘッダー
+```bash
+Authorization: Bearer <token>
+```
+
+### JWT設定
+- アルゴリズム: HS256
+- 有効期限: 7日間
+- 検証: `withAuth`ミドルウェアで自動処理
+
+## キャッシング戦略
+
+すべてのGETエンドポイントは60秒間キャッシュされます：
+
+```typescript
+const getCachedData = unstable_cache(
+  async () => getData(),
+  ['cache-key'],
+  {
+    revalidate: 60,
+    tags: ['certifications', 'questions']
+  }
+)
+```
+
+キャッシュ無効化は`revalidateTag()`で実行（POST/PUT/DELETEで自動）。
+
+## データベース最適化
+
+### パフォーマンスインデックス
+
+8つのインデックスを追加済み（50-90%高速化）:
+
+```bash
+# インデックス適用
+psql $DATABASE_URL < docs/performance/add-indexes.sql
+```
+
+主要インデックス:
+- `idx_question_sets_certification_id`
+- `idx_questions_question_set_id`
+- `idx_choices_question_id`
+- `idx_choices_is_correct`
+
+詳細: `docs/performance/database-optimization.md`
+
+### N+1クエリ最適化
+
+`getCertificationsWithQuestionSets()`はN+M個のクエリを2個に削減済み。
+
+## 主要APIエンドポイント
+
+### 認証
+- `POST /api/v1/auth/login` - ログイン（JWT取得）
+- `GET /api/v1/auth/me` - ユーザー情報取得
+
+### 資格管理
+- `GET /api/v1/certifications` - 資格一覧
+- `POST /api/v1/certifications` - 資格作成
+- `GET /api/v1/certifications/:id` - 資格詳細
+- `PUT /api/v1/certifications/:id` - 資格更新
+- `DELETE /api/v1/certifications/:id` - 資格削除
+
+### 学習用（最適化済み）
+- `GET /api/v1/study/certifications` - 資格+問題セット一覧
+- `GET /api/v1/study/question-sets/:id` - 問題セット詳細+問題数
+- `GET /api/v1/study/questions/:questionSetId` - 問題+選択肢
+
+全エンドポイント: `docs/api/README.md`
+
+## コーディング規約
+
+### API Routes
+```typescript
+import { NextRequest } from 'next/server'
+import { withAuth } from '@/lib/api/middleware'
+import { successResponse, errorResponse } from '@/lib/api/response'
+
+// GETハンドラー（requestパラメータ不要な場合）
+export const GET = withAuth(async () => {
+  const data = await getCachedData()
+  return successResponse(data)
+})
+
+// POSTハンドラー（requestパラメータ必要）
+export const POST = withAuth(async (request: NextRequest) => {
+  const body = await request.json()
+  const result = await createData(body)
+  return successResponse(result, 201)
+})
+```
+
+### Database層
+```typescript
+// 戻り値は常にDatabaseResult型
+export async function createItem(data: unknown): Promise<DatabaseResult<{ id: string }>> {
+  try {
+    // Zodでバリデーション
+    const result = schema.safeParse(data)
+    if (!result.success) {
+      return { success: false, error: '入力内容に誤りがあります' }
+    }
+
+    // データベース操作
+    const supabase = await createClient()
+    const { data: item, error } = await supabase.from('table').insert(...)
+
+    if (error) {
+      const appError = handleSupabaseError(error)
+      return { success: false, error: appError.message }
+    }
+
+    return { success: true, data: { id: item.id } }
+  } catch (error) {
+    console.error('Error:', error)
+    return { success: false, error: 'エラーメッセージ' }
+  }
+}
+```
+
+## デプロイ（Vercel）
+
+```bash
+# 1. 環境変数設定（Vercelダッシュボード）
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+JWT_SECRET=...
+ALLOWED_ORIGINS=https://yourdomain.com
+
+# 2. デプロイ
+vercel --prod
+
+# 3. データベースインデックス適用（初回のみ）
+psql $DATABASE_URL < docs/performance/add-indexes.sql
+```
+
+詳細: `docs/deployment/vercel-deployment.md`
 
 ## トラブルシューティング
 
-### 型エラーが出る場合
+### ビルドエラー: "Cannot find name 'NextRequest'"
+→ `import { NextRequest } from 'next/server'` を追加
+
+### TypeScript型エラー
 ```bash
-npm run types:generate
+pnpm tsc --noEmit  # エラー確認
 ```
 
-### ビルドエラーの場合
-```bash
-rm -rf .next
-npm run build
-```
+### フォント読み込みエラー（ローカル開発）
+→ ネットワーク問題。本番環境では正常動作。
 
-### 認証エラーの場合
-- `.env.local` の設定確認
-- Supabaseプロジェクトの認証設定確認
-- ユーザーのメタデータに `role: 'admin'` が設定されているか確認
+### JWT認証エラー
+1. `JWT_SECRET`が32文字以上か確認
+2. トークンの有効期限（7日）を確認
+3. `Authorization: Bearer <token>` ヘッダー形式を確認
+
+### キャッシュが更新されない
+→ `revalidateTag()`が正しく呼ばれているか確認。POST/PUT/DELETEアクション後に自動実行。
+
+## 重要ドキュメント
+
+- `docs/api/README.md` - REST API完全仕様
+- `docs/performance/database-optimization.md` - パフォーマンス最適化
+- `docs/deployment/vercel-deployment.md` - デプロイ手順
+- `docs/PROJECT_SUMMARY.md` - プロジェクト全体概要
 
 ---
 
-**最終更新:** 2025-12-21
-**プロジェクトフェーズ:** Phase 0 - プロジェクト基盤構築完了
+**最終更新:** 2025-12-23
+**プロジェクトフェーズ:** Phase 5完了 - birgerik-core分離・REST API実装完了
