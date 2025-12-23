@@ -1,8 +1,7 @@
 'use client'
 
-import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { XCircle, ChevronRight, Eye } from 'lucide-react'
+import { XCircle, Eye } from 'lucide-react'
 import { Button } from '@/components/shared/ui/button'
 import { Card } from '@/components/shared/ui/card'
 import { Badge } from '@/components/shared/ui/badge'

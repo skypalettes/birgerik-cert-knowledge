@@ -1,6 +1,6 @@
 import { ReactNode } from 'react'
 import Link from 'next/link'
-import { BookOpen, ClipboardList } from 'lucide-react'
+import { BookOpen } from 'lucide-react'
 
 export default function StudyLayout({ children }: { children: ReactNode }) {
   return (

@@ -4,6 +4,29 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
+  // API ルートの CORS 処理
+  if (request.nextUrl.pathname.startsWith('/api/v1')) {
+    // プリフライトリクエスト (OPTIONS) の処理
+    if (request.method === 'OPTIONS') {
+      return new NextResponse(null, {
+        status: 200,
+        headers: {
+          'Access-Control-Allow-Origin': process.env.CORS_ORIGIN || '*',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          'Access-Control-Max-Age': '86400',
+        },
+      })
+    }
+
+    // 通常のAPIリクエストにCORSヘッダーを追加
+    const response = NextResponse.next()
+    response.headers.set('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*')
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+    return response
+  }
+
   // レスポンスオブジェクトを作成
   let response = NextResponse.next({
     request: {
@@ -86,11 +109,9 @@ export const config = {
     /*
      * 以下のパスにマッチ:
      * - /admin (管理者ルート全体)
-     * - /admin/login
-     * - /admin/certifications
-     * - /admin/question-sets
-     * - /admin/questions
+     * - /api/v1 (API ルート、CORS 対応)
      */
     '/admin/:path*',
+    '/api/v1/:path*',
   ],
 }

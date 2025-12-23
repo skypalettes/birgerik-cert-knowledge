@@ -1,0 +1,891 @@
+openapi: 3.0.3
+info:
+  title: Birgerik Core API
+  description: |
+    Birgerik Core REST API - 資格試験学習システムのバックエンドAPI
+
+    ## 認証
+    すべてのAPIエンドポイントはJWT認証が必要です。
+    `/api/v1/auth/login`でログインしてトークンを取得し、
+    その後のリクエストでは`Authorization: Bearer {token}`ヘッダーを含めてください。
+
+    ## レート制限
+    - キャッシュ: 60秒
+    - すべてのGETエンドポイントはキャッシュされます
+
+  version: 1.0.0
+  contact:
+    name: Birgerik Team
+servers:
+  - url: http://localhost:3000/api/v1
+    description: 開発環境
+  - url: https://your-domain.vercel.app/api/v1
+    description: 本番環境
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWTトークンによる認証（`/api/v1/auth/login`で取得）
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: エラーメッセージ
+      required:
+        - error
+
+    ValidationError:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Validation failed"
+        fieldErrors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+      required:
+        - error
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - email
+
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: メールアドレス
+        password:
+          type: string
+          minLength: 6
+          description: パスワード（6文字以上）
+      required:
+        - email
+        - password
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWTトークン
+        user:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            email:
+              type: string
+              format: email
+      required:
+        - token
+        - user
+
+    Certification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          description: 資格名
+        description:
+          type: string
+          nullable: true
+          description: 説明
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+
+    CertificationWithCount:
+      allOf:
+        - $ref: '#/components/schemas/Certification'
+        - type: object
+          properties:
+            question_sets:
+              type: array
+              nullable: true
+              items:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                    description: 問題集数
+
+    CertificationInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          description: 資格名
+        description:
+          type: string
+          description: 説明
+      required:
+        - name
+        - description
+
+    QuestionSet:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          description: 問題集名
+        description:
+          type: string
+          nullable: true
+          description: 説明
+        certification_id:
+          type: string
+          format: uuid
+          description: 資格ID
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - certification_id
+
+    QuestionSetInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          description: 問題集名
+        description:
+          type: string
+          description: 説明
+        certification_id:
+          type: string
+          format: uuid
+          description: 資格ID
+      required:
+        - name
+        - description
+        - certification_id
+
+    Choice:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        choice_text:
+          type: string
+          description: 選択肢テキスト
+        is_correct:
+          type: boolean
+          description: 正解かどうか
+        order_index:
+          type: integer
+          nullable: true
+          description: 表示順序
+      required:
+        - id
+        - choice_text
+        - is_correct
+
+    Question:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        question_text:
+          type: string
+          description: 問題文
+        explanation:
+          type: string
+          nullable: true
+          description: 解説
+        is_multiple_choice:
+          type: boolean
+          description: 複数選択問題かどうか
+        question_set_id:
+          type: string
+          format: uuid
+          description: 問題集ID
+        order_index:
+          type: integer
+          nullable: true
+          description: 表示順序
+        choices:
+          type: array
+          items:
+            $ref: '#/components/schemas/Choice'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - question_text
+        - is_multiple_choice
+        - question_set_id
+        - choices
+
+    QuestionInput:
+      type: object
+      properties:
+        question_text:
+          type: string
+          minLength: 1
+          description: 問題文
+        explanation:
+          type: string
+          description: 解説
+        is_multiple_choice:
+          type: boolean
+          description: 複数選択問題かどうか
+        question_set_id:
+          type: string
+          format: uuid
+          description: 問題集ID
+        choices:
+          type: array
+          minItems: 2
+          items:
+            type: object
+            properties:
+              choice_text:
+                type: string
+                minLength: 1
+              is_correct:
+                type: boolean
+            required:
+              - choice_text
+              - is_correct
+      required:
+        - question_text
+        - explanation
+        - is_multiple_choice
+        - question_set_id
+        - choices
+
+security:
+  - BearerAuth: []
+
+paths:
+  /auth/login:
+    post:
+      summary: ログイン
+      description: メールアドレスとパスワードでログインし、JWTトークンを取得
+      tags:
+        - 認証
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: ログイン成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: 認証失敗
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: バリデーションエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /auth/me:
+    get:
+      summary: ユーザー情報取得
+      description: 現在ログイン中のユーザー情報を取得
+      tags:
+        - 認証
+      responses:
+        '200':
+          description: ユーザー情報
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /certifications:
+    get:
+      summary: 資格一覧取得
+      description: すべての資格を取得（問題集数を含む）
+      tags:
+        - 資格
+      responses:
+        '200':
+          description: 資格一覧
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CertificationWithCount'
+        '401':
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      summary: 資格作成
+      description: 新しい資格を作成
+      tags:
+        - 資格
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CertificationInput'
+      responses:
+        '201':
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+        '400':
+          description: リクエストエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 未認証
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /certifications/{id}:
+    get:
+      summary: 資格詳細取得
+      description: 特定の資格を取得
+      tags:
+        - 資格
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 資格詳細
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Certification'
+        '404':
+          description: 資格が見つかりません
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      summary: 資格更新
+      description: 資格を更新
+      tags:
+        - 資格
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CertificationInput'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          description: リクエストエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      summary: 資格削除
+      description: 資格を削除
+      tags:
+        - 資格
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 削除成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          description: リクエストエラー（関連する問題集が存在する場合など）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /question-sets:
+    get:
+      summary: 問題集一覧取得
+      description: すべての問題集を取得
+      tags:
+        - 問題集
+      responses:
+        '200':
+          description: 問題集一覧
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/QuestionSet'
+
+    post:
+      summary: 問題集作成
+      description: 新しい問題集を作成
+      tags:
+        - 問題集
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuestionSetInput'
+      responses:
+        '201':
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+
+  /question-sets/{id}:
+    get:
+      summary: 問題集詳細取得
+      description: 特定の問題集を取得
+      tags:
+        - 問題集
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 問題集詳細
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuestionSet'
+        '404':
+          description: 問題集が見つかりません
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      summary: 問題集更新
+      description: 問題集を更新
+      tags:
+        - 問題集
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuestionSetInput'
+      responses:
+        '200':
+          description: 更新成功
+
+    delete:
+      summary: 問題集削除
+      description: 問題集を削除
+      tags:
+        - 問題集
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 削除成功
+
+  /questions:
+    get:
+      summary: 問題一覧取得
+      description: 問題を取得（問題集IDでフィルタリング可能）
+      tags:
+        - 問題
+      parameters:
+        - name: question_set_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: 問題集IDでフィルタリング
+      responses:
+        '200':
+          description: 問題一覧
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Question'
+
+    post:
+      summary: 問題作成
+      description: 新しい問題を作成（選択肢を含む）
+      tags:
+        - 問題
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuestionInput'
+      responses:
+        '201':
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+
+  /questions/{id}:
+    get:
+      summary: 問題詳細取得
+      description: 特定の問題を取得（選択肢を含む）
+      tags:
+        - 問題
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 問題詳細
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Question'
+        '404':
+          description: 問題が見つかりません
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      summary: 問題更新
+      description: 問題を更新（選択肢を含む）
+      tags:
+        - 問題
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuestionInput'
+      responses:
+        '200':
+          description: 更新成功
+
+    delete:
+      summary: 問題削除
+      description: 問題を削除
+      tags:
+        - 問題
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 削除成功
+
+  /study/certifications:
+    get:
+      summary: 学習用資格一覧
+      description: すべての資格と問題集を取得（学習用）
+      tags:
+        - 学習
+      responses:
+        '200':
+          description: 資格一覧（問題集を含む）
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  certifications:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        name:
+                          type: string
+                        description:
+                          type: string
+                          nullable: true
+                        question_sets:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                format: uuid
+                              name:
+                                type: string
+                              description:
+                                type: string
+                                nullable: true
+                              question_count:
+                                type: integer
+
+  /study/question-sets/{id}:
+    get:
+      summary: 学習用問題集詳細
+      description: 問題集の詳細を取得（問題数を含む）
+      tags:
+        - 学習
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 問題集詳細
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  question_set:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      name:
+                        type: string
+                      description:
+                        type: string
+                        nullable: true
+                      certification:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            format: uuid
+                          name:
+                            type: string
+                      question_count:
+                        type: integer
+        '404':
+          description: 問題集が見つかりません
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /study/questions/{questionSetId}:
+    get:
+      summary: 学習用問題一覧
+      description: 問題集の問題一覧を取得（選択肢を含む）
+      tags:
+        - 学習
+      parameters:
+        - name: questionSetId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 問題一覧（選択肢を含む）
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  questions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        question_text:
+                          type: string
+                        explanation:
+                          type: string
+                          nullable: true
+                        is_multiple_choice:
+                          type: boolean
+                        order_index:
+                          type: integer
+                          nullable: true
+                        choices:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                format: uuid
+                              choice_text:
+                                type: string
+                              is_correct:
+                                type: boolean
+                              order_index:
+                                type: integer
+                                nullable: true
+        '404':
+          description: 問題集が見つかりません
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+tags:
+  - name: 認証
+    description: 認証関連のエンドポイント
+  - name: 資格
+    description: 資格のCRUD操作
+  - name: 問題集
+    description: 問題集のCRUD操作
+  - name: 問題
+    description: 問題のCRUD操作
+  - name: 学習
+    description: 学習用の読み取り専用エンドポイント

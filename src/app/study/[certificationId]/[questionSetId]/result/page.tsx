@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
 import { Trophy, RotateCcw, Home, BookOpen, Target, Clock } from 'lucide-react'
 import { Button } from '@/components/shared/ui/button'
