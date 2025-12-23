@@ -11,7 +11,6 @@ import {
   createQuestionSet as dbCreateQuestionSet,
   updateQuestionSet as dbUpdateQuestionSet,
   deleteQuestionSet as dbDeleteQuestionSet,
-  getQuestionSetsForSelect as dbGetQuestionSetsForSelect,
 } from '@/lib/database/question-sets'
 import { getCertificationsForSelect as dbGetCertificationsForSelect } from '@/lib/database/certifications'
 

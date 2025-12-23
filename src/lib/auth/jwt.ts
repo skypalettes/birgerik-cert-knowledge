@@ -20,7 +20,7 @@ export interface JWTPayload {
  */
 export async function signToken(payload: Omit<JWTPayload, 'iat' | 'exp'>): Promise<string> {
   try {
-    const token = await new SignJWT(payload as any)
+    const token = await new SignJWT(payload as Record<string, unknown>)
       .setProtectedHeader({ alg: JWT_ALGORITHM })
       .setIssuedAt()
       .setExpirationTime(JWT_EXPIRATION)

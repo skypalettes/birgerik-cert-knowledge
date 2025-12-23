@@ -1,4 +1,3 @@
-import { NextRequest } from 'next/server'
 import { withAuth } from '@/lib/api/middleware'
 import { successResponse, errorResponse } from '@/lib/api/response'
 import { createClient } from '@/lib/supabase/server'
@@ -7,7 +6,7 @@ import { createClient } from '@/lib/supabase/server'
  * GET /api/v1/auth/me
  * 現在ログイン中のユーザー情報を取得
  */
-export const GET = withAuth(async (request: NextRequest, _context, user) => {
+export const GET = withAuth(async () => {
   try {
     const supabase = await createClient()
 

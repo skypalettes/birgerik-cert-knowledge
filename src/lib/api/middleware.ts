@@ -23,7 +23,7 @@ export async function authenticateRequest(
 
     const user = await verifyToken(token)
     return { user }
-  } catch (error) {
+  } catch {
     return {
       error: NextResponse.json(
         { error: 'Invalid or expired token' },
@@ -36,10 +36,10 @@ export async function authenticateRequest(
 /**
  * 認証が必要なAPIハンドラーをラップする
  */
-export function withAuth<T = any>(
-  handler: (request: NextRequest, context: { params: T }, user: JWTPayload) => Promise<NextResponse>
+export function withAuth<T = Record<string, never>>(
+  handler: (request: NextRequest, context: { params: Promise<T> }, user: JWTPayload) => Promise<NextResponse>
 ) {
-  return async (request: NextRequest, context: { params: T }) => {
+  return async (request: NextRequest, context: { params: Promise<T> }) => {
     const auth = await authenticateRequest(request)
 
     if ('error' in auth) {

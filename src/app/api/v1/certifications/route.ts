@@ -1,6 +1,5 @@
-import { NextRequest } from 'next/server'
 import { withAuth } from '@/lib/api/middleware'
-import { successResponse, errorResponse, validationErrorResponse } from '@/lib/api/response'
+import { successResponse, errorResponse } from '@/lib/api/response'
 import {
   getCertifications,
   createCertification,
