@@ -1,309 +1,333 @@
-# Birgerik Core 分離プロジェクト - 提案資料
+# Birgerik Core 分離プロジェクト - 提案資料 v2.0（ハイブリッドアプローチ）
 
 ## 📋 目次
-1. [現状分析](#現状分析)
-2. [目標アーキテクチャ](#目標アーキテクチャ)
-3. [実装アプローチの比較](#実装アプローチの比較)
-4. [推奨アプローチ: Turborepo](#推奨アプローチ-turborepo)
-5. [技術スタック](#技術スタック)
-6. [マイグレーションロードマップ](#マイグレーションロードマップ)
-7. [リスクと対策](#リスクと対策)
+1. [パフォーマンス分析](#パフォーマンス分析)
+2. [アーキテクチャ選択肢の比較](#アーキテクチャ選択肢の比較)
+3. [推奨: ハイブリッドアーキテクチャ](#推奨-ハイブリッドアーキテクチャ)
+4. [技術スタック詳細](#技術スタック詳細)
+5. [マイグレーションロードマップ](#マイグレーションロードマップ)
+6. [パフォーマンス比較](#パフォーマンス比較)
 
 ---
 
-## 現状分析
+## パフォーマンス分析
 
-### 現在のアーキテクチャ
-```
-┌─────────────────────────────────────┐
-│         Birgerik (Monolith)         │
-│  ┌──────────────────────────────┐   │
-│  │  Next.js 15 App Router       │   │
-│  │  - Server Components         │   │
-│  │  - Client Components         │   │
-│  │  - Server Actions (CRUD)     │   │
-│  └──────────────┬───────────────┘   │
-│                 │                    │
-│  ┌──────────────▼───────────────┐   │
-│  │  Supabase Client             │   │
-│  │  - Auth                      │   │
-│  │  - PostgreSQL                │   │
-│  └──────────────────────────────┘   │
-└─────────────────────────────────────┘
+### Server Actions vs REST API のパフォーマンス
+
+#### Server Actions（現状）⚡
+```typescript
+// Server Component から直接呼び出し
+const certifications = await getCertifications() // 0ms ネットワークレイテンシー
 ```
 
-### 主な特徴
-- **フレームワーク**: Next.js 15 (App Router)
-- **API パターン**: Server Actions（REST API なし）
-- **データベース**: Supabase PostgreSQL
-- **認証**: Supabase Auth (Cookie-based)
-- **ファイル数**: 67 TypeScript ファイル、28 React コンポーネント
-- **デプロイ**: Vercel
-
-### 課題
-1. ❌ REST API が存在しない（Server Actions のみ）
-2. ❌ Supabase クライアントに強く結合
-3. ❌ UI と ビジネスロジックの分離が不完全
-4. ❌ Obsidian プラグインや モバイルアプリから接続不可
+**特徴**:
+- ✅ **サーバー内で直接実行**（ネットワークレイテンシー 0ms）
+- ✅ **Streaming レスポンス**対応
+- ✅ **Suspense** との統合
+- ✅ **自動的な revalidation**
+- ✅ **最高のパフォーマンス**
 
 ---
 
-## 目標アーキテクチャ
-
-### 分離後のアーキテクチャ
+#### REST API 経由 🐌
+```typescript
+// HTTP リクエストが必要
+const response = await fetch('/api/v1/certifications')
+const certifications = await response.json() // +50-200ms
 ```
-┌──────────────────────────────────────────────────────────────┐
-│                        Vercel Platform                        │
-│  ┌──────────────────────────────────────────────────────┐    │
-│  │              Turborepo Monorepo                      │    │
-│  │                                                      │    │
-│  │  ┌────────────────────────────────────────────┐     │    │
-│  │  │  apps/birgerik-core (API Backend)          │     │    │
-│  │  │  - REST/GraphQL API                        │     │    │
-│  │  │  - Database CRUD Operations                │     │    │
-│  │  │  - Authentication & Authorization          │     │    │
-│  │  │  - Supabase Client                         │     │    │
-│  │  └────────────────┬───────────────────────────┘     │    │
-│  │                   │ API                             │    │
-│  │  ┌────────────────▼───────────────────────────┐     │    │
-│  │  │  apps/birgerik-web (Web UI)                │     │    │
-│  │  │  - Next.js Frontend                        │     │    │
-│  │  │  - React Components                        │     │    │
-│  │  │  - Study/Practice UI                       │     │    │
-│  │  └────────────────────────────────────────────┘     │    │
-│  │                                                      │    │
-│  │  ┌────────────────────────────────────────────┐     │    │
-│  │  │  packages/shared                           │     │    │
-│  │  │  - TypeScript Types                        │     │    │
-│  │  │  - Validation Schemas (Zod)                │     │    │
-│  │  │  - Shared Utilities                        │     │    │
-│  │  └────────────────────────────────────────────┘     │    │
-│  └──────────────────────────────────────────────────────┘    │
-└──────────────────────────────────────────────────────────────┘
+
+**追加されるオーバーヘッド**:
+- ❌ HTTP リクエスト/レスポンス（**+50-200ms**）
+- ❌ JSON シリアライゼーション/デシリアライゼーション（**+10-30ms**）
+- ❌ 認証ヘッダーの検証（**+5-10ms**）
+- ❌ ミドルウェアチェーン（**+5-10ms**）
+
+**合計**: **70-250ms の追加レイテンシー**
+
+---
+
+### 結論
+
+**birgerik-web で Server Actions を削除すると、確実にパフォーマンスが低下します。**
+
+---
+
+## アーキテクチャ選択肢の比較
+
+### オプション 1: ハイブリッドアーキテクチャ（推奨 ✅）
+
+#### 構成
+```
+┌────────────────────────────────────────────────────────┐
+│                   Vercel Platform                      │
+│  ┌──────────────────────────────────────────────┐     │
+│  │            Turborepo Monorepo                │     │
+│  │                                              │     │
+│  │  ┌────────────────────────────────────┐     │     │
+│  │  │ packages/database-layer            │     │     │
+│  │  │ - Supabase Client                  │     │     │
+│  │  │ - DB Query Functions               │     │     │
+│  │  │ - Business Logic                   │     │     │
+│  │  └───────┬──────────────────┬─────────┘     │     │
+│  │          │                  │               │     │
+│  │  ┌───────▼────────┐  ┌──────▼──────────┐   │     │
+│  │  │ apps/web       │  │ apps/core       │   │     │
+│  │  │ (Next.js)      │  │ (API Server)    │   │     │
+│  │  │                │  │                 │   │     │
+│  │  │ Server Actions │  │ REST API        │   │     │
+│  │  │ ↓              │  │ ↓               │   │     │
+│  │  │ @repo/db       │  │ @repo/db        │   │     │
+│  │  └────────────────┘  └─────────────────┘   │     │
+│  │                             │               │     │
+│  │  ┌────────────────────────┐ │               │     │
+│  │  │ packages/shared        │ │               │     │
+│  │  │ - Types                │←┘               │     │
+│  │  │ - Validation           │                 │     │
+│  │  └────────────────────────┘                 │     │
+│  └──────────────────────────────────────────────┘     │
+└────────────────────────────────────────────────────────┘
 
 External Clients:
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│ Obsidian Plugin │────▶│ birgerik-core   │◀────│   iOS/Android   │
-│                 │     │    API          │     │      Apps       │
-└─────────────────┘     └─────────────────┘     └─────────────────┘
+┌──────────────────┐
+│ Obsidian Plugin  │──────┐
+└──────────────────┘      │
+┌──────────────────┐      ▼
+│ Mobile Apps      │────► apps/core REST API
+└──────────────────┘
 ```
 
-### コンポーネント構成
-
-#### 1. **apps/birgerik-core** (API Backend)
-- **役割**: DB CRUD、認証、ビジネスロジック
-- **技術**: Next.js API Routes または Fastify/Express
-- **公開**: REST API (または GraphQL)
-- **デプロイ**: Vercel Serverless Functions
-
-#### 2. **apps/birgerik-web** (Web Frontend)
-- **役割**: Web UI（管理画面 + 学習画面）
-- **技術**: Next.js 15 (App Router)
-- **データ取得**: birgerik-core API 経由
-- **デプロイ**: Vercel (Static + SSR)
-
-#### 3. **packages/shared** (共有ライブラリ)
-- **TypeScript 型定義**
-- **Zod バリデーションスキーマ**
-- **共通ユーティリティ関数**
-
-#### 4. **Future Clients**
-- **Obsidian Plugin**: TypeScript/JavaScript
-- **Mobile Apps**: React Native / Swift / Kotlin
-
----
-
-## 実装アプローチの比較
-
-### オプション 1: Turborepo (推奨 ✅)
+#### 特徴
+- **apps/web**: Server Actions を**維持**（高速）
+- **apps/core**: REST API として公開（外部クライアント用）
+- **packages/database-layer**: DB 操作ロジックを共有
+- **packages/shared**: 型定義、バリデーションを共有
 
 #### メリット
-- ✅ **Vercel 公式**: Vercel による開発・最適化
-- ✅ **高速ビルド**: Remote Caching、Incremental Builds
-- ✅ **依存関係管理**: Workspace 間のコード共有が簡単
-- ✅ **既存プロジェクト移行**: 段階的な移行が可能
-- ✅ **スケーラビリティ**: 将来的に packages を追加しやすい
-- ✅ **TypeScript サポート**: 型の共有が容易
-- ✅ **単一デプロイ**: Vercel に monorepo として一括デプロイ
+- ✅ **Web アプリは最高速度を維持**（Server Actions）
+- ✅ **外部クライアントは REST API でアクセス可能**
+- ✅ **ビジネスロジックの重複なし**（共有パッケージ）
+- ✅ **段階的移行が可能**
+- ✅ **型安全性の保証**
 
 #### デメリット
-- ⚠️ 学習コスト: Turborepo の設定とワークフロー
-- ⚠️ 初期セットアップ: ディレクトリ構造の再編成が必要
-
-#### 適用性
-- **最適**: 中〜大規模プロジェクト、複数アプリケーション
-- **Vercel デプロイ**: ネイティブサポート
-- **チーム開発**: 複数人での開発に最適
+- ⚠️ 2 つのエントリーポイント（Web + API）を維持
+- ⚠️ ビジネスロジックを共有パッケージ化する必要がある
 
 ---
 
-### オプション 2: pnpm Workspaces
+### オプション 2: 完全 API 化
+
+#### 構成
+- birgerik-web も birgerik-core の API を使用
+- すべてのクライアントが同じ API を使用
 
 #### メリット
-- ✅ 軽量でシンプル
-- ✅ 高速な依存関係インストール
-- ✅ Monorepo の基本機能は揃っている
+- ✅ 統一されたアクセスパターン
+- ✅ API のテストがしやすい
 
 #### デメリット
-- ❌ ビルドキャッシュなし（手動で設定必要）
-- ❌ タスクオーケストレーションが弱い
-- ❌ Vercel との統合は手動
-
-#### 適用性
-- **最適**: 小規模プロジェクト、シンプルな構成
+- ❌ **Web アプリのパフォーマンスが 70-250ms 低下**
+- ❌ Server Actions の利点をすべて失う
+- ❌ ネットワークエラーの処理が複雑化
 
 ---
 
-### オプション 3: Nx
+### オプション 3: tRPC
+
+#### 構成
+- birgerik-core を tRPC サーバーとして実装
+- birgerik-web と Obsidian は tRPC クライアントを使用
 
 #### メリット
-- ✅ 強力なビルドキャッシュ
-- ✅ 高度な依存関係グラフ
-- ✅ プラグインエコシステム
+- ✅ **型安全な RPC 通信**
+- ✅ Server Actions に近い開発体験
+- ✅ 自動的な型推論
 
 #### デメリット
-- ❌ 複雑で高機能すぎる
-- ❌ 学習コストが高い
-- ❌ Vercel デプロイの公式サポートが弱い
-
-#### 適用性
-- **最適**: エンタープライズレベルの大規模プロジェクト
+- ⚠️ Obsidian プラグインでの tRPC 使用は追加設定が必要
+- ⚠️ REST API ではないため、他のプラットフォームからの利用が難しい
+- ⚠️ 学習コスト
 
 ---
 
-### オプション 4: 別リポジトリ (Polyrepo)
+### オプション 4: GraphQL
+
+#### 構成
+- birgerik-core を GraphQL サーバーとして実装
+- すべてのクライアントが GraphQL クエリを使用
 
 #### メリット
-- ✅ 完全な独立性
-- ✅ 個別のデプロイ・バージョン管理
+- ✅ 柔軟なデータ取得
+- ✅ オーバーフェッチングの削減
 
 #### デメリット
-- ❌ コード共有が困難（npm package 化が必要）
-- ❌ 型の同期が難しい
-- ❌ リファクタリングが複雑
-- ❌ バージョン管理の手間
-
-#### 適用性
-- **最適**: 完全に独立した製品を作る場合
+- ❌ 複雑なセットアップ
+- ❌ パフォーマンスオーバーヘッド
+- ❌ 学習コスト高
 
 ---
 
-## 推奨アプローチ: Turborepo
+### 比較表
 
-### 理由
-1. **Vercel ネイティブサポート**: デプロイが簡単
-2. **段階的移行**: 既存コードを少しずつ移行可能
-3. **型安全性**: packages/shared で型を共有
-4. **拡張性**: 将来的に Obsidian/Mobile 用 SDK も追加可能
-5. **開発体験**: 高速ビルド、Hot Reload
+| アーキテクチャ | Web パフォーマンス | 外部クライアント対応 | 開発体験 | 複雑度 | 推奨度 |
+|--------------|-----------------|-------------------|---------|-------|-------|
+| **ハイブリッド** | ⭐⭐⭐⭐⭐ 最速 | ⭐⭐⭐⭐⭐ REST API | ⭐⭐⭐⭐ | ⭐⭐⭐ | ✅ **推奨** |
+| 完全 API 化 | ⭐⭐ 遅い | ⭐⭐⭐⭐⭐ REST API | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ❌ |
+| tRPC | ⭐⭐⭐⭐ 速い | ⭐⭐⭐ tRPC のみ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | ⚠️ |
+| GraphQL | ⭐⭐⭐ 普通 | ⭐⭐⭐⭐ GraphQL | ⭐⭐⭐ | ⭐⭐ | ❌ |
 
-### プロジェクト構成
+---
+
+## 推奨: ハイブリッドアーキテクチャ
+
+### アーキテクチャ詳細
+
+#### 1. プロジェクト構造
 
 ```
 birgerik/
 ├── apps/
-│   ├── core/                         # API Backend
+│   ├── web/                              # Web アプリ（既存）
 │   │   ├── src/
 │   │   │   ├── app/
-│   │   │   │   └── api/
-│   │   │   │       ├── v1/
-│   │   │   │       │   ├── certifications/
-│   │   │   │       │   │   └── route.ts
-│   │   │   │       │   ├── question-sets/
-│   │   │   │       │   │   └── route.ts
-│   │   │   │       │   ├── questions/
-│   │   │   │       │   │   └── route.ts
-│   │   │   │       │   ├── study/
-│   │   │   │       │   │   └── route.ts
-│   │   │   │       │   └── auth/
-│   │   │   │       │       ├── login/route.ts
-│   │   │   │       │       └── logout/route.ts
-│   │   │   ├── lib/
-│   │   │   │   ├── db/               # Database layer
-│   │   │   │   │   ├── client.ts
-│   │   │   │   │   └── queries/
-│   │   │   │   ├── auth/             # Auth middleware
-│   │   │   │   │   ├── jwt.ts
-│   │   │   │   │   └── middleware.ts
-│   │   │   │   └── utils/
-│   │   │   └── middleware.ts
+│   │   │   │   ├── admin/
+│   │   │   │   │   ├── certifications/
+│   │   │   │   │   │   ├── page.tsx      # Server Component
+│   │   │   │   │   │   └── actions.ts    # Server Actions（維持）
+│   │   │   │   │   ├── question-sets/
+│   │   │   │   │   └── questions/
+│   │   │   │   ├── study/
+│   │   │   │   └── page.tsx
+│   │   │   ├── components/               # React Components
+│   │   │   └── middleware.ts             # Auth
 │   │   ├── package.json
 │   │   └── next.config.ts
 │   │
-│   └── web/                          # Web Frontend
+│   └── core/                             # API サーバー（新規）
 │       ├── src/
-│       │   ├── app/                  # Next.js pages (既存)
-│       │   ├── components/           # React components (既存)
+│       │   ├── app/
+│       │   │   └── api/
+│       │   │       └── v1/
+│       │   │           ├── certifications/
+│       │   │           │   └── route.ts   # REST API
+│       │   │           ├── question-sets/
+│       │   │           │   └── route.ts
+│       │   │           ├── questions/
+│       │   │           │   └── route.ts
+│       │   │           ├── study/
+│       │   │           │   └── route.ts
+│       │   │           └── auth/
+│       │   │               ├── login/route.ts
+│       │   │               └── me/route.ts
 │       │   ├── lib/
-│       │   │   ├── api/              # API client (新規)
-│       │   │   │   └── client.ts     # fetch wrapper
-│       │   │   └── store/            # Zustand (既存)
-│       │   └── middleware.ts         # Client-side auth
+│       │   │   ├── auth/                 # JWT 認証
+│       │   │   │   ├── jwt.ts
+│       │   │   │   └── middleware.ts
+│       │   │   └── utils/
+│       │   └── middleware.ts
 │       ├── package.json
 │       └── next.config.ts
 │
 ├── packages/
-│   ├── shared/                       # 共有ライブラリ
+│   ├── database-layer/                   # DB 操作の共有（新規）
 │   │   ├── src/
-│   │   │   ├── types/                # Database types
+│   │   │   ├── client.ts                 # Supabase Client
+│   │   │   ├── certifications/
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── get.ts                # getCertifications()
+│   │   │   │   ├── create.ts             # createCertification()
+│   │   │   │   ├── update.ts             # updateCertification()
+│   │   │   │   └── delete.ts             # deleteCertification()
+│   │   │   ├── question-sets/
+│   │   │   │   └── ...
+│   │   │   ├── questions/
+│   │   │   │   └── ...
+│   │   │   └── study/
+│   │   │       └── ...
+│   │   ├── package.json
+│   │   └── tsconfig.json
+│   │
+│   ├── shared/                           # 型、バリデーション
+│   │   ├── src/
+│   │   │   ├── types/
 │   │   │   │   ├── index.ts
 │   │   │   │   └── database.ts
-│   │   │   ├── validations/          # Zod schemas
+│   │   │   ├── validations/
 │   │   │   │   ├── certification.ts
 │   │   │   │   ├── question-set.ts
 │   │   │   │   └── question.ts
-│   │   │   ├── errors/               # Error classes
-│   │   │   │   └── index.ts
-│   │   │   └── utils/                # Shared utilities
+│   │   │   └── errors/
 │   │   │       └── index.ts
 │   │   ├── package.json
 │   │   └── tsconfig.json
 │   │
-│   ├── eslint-config/                # 共有 ESLint 設定
-│   │   └── package.json
-│   │
-│   └── typescript-config/            # 共有 tsconfig
-│       ├── base.json
-│       ├── nextjs.json
-│       └── package.json
+│   └── obsidian-sdk/                     # Obsidian 用 SDK（今後）
+│       ├── src/
+│       │   └── client.ts                 # API Client
+│       ├── package.json
+│       └── tsconfig.json
 │
-├── turbo.json                        # Turborepo 設定
-├── package.json                      # Root package.json
-└── pnpm-workspace.yaml               # Workspace 設定
+├── turbo.json
+├── package.json
+└── pnpm-workspace.yaml
 ```
 
 ---
 
-## 技術スタック
+#### 2. コード例
 
-### apps/birgerik-core (API)
-
-#### オプション A: Next.js API Routes (推奨 ✅)
+##### packages/database-layer/src/certifications/get.ts
 ```typescript
-// apps/core/src/app/api/v1/certifications/route.ts
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/db/client'
-import { z } from 'zod'
-import { certificationSchema } from '@repo/shared/validations'
+import { createClient } from '../client'
+import type { Certification } from '@repo/shared/types'
 
-export async function GET(request: NextRequest) {
+export async function getCertifications(): Promise<Certification[]> {
   const supabase = createClient()
+
   const { data, error } = await supabase
     .from('certifications')
     .select('*')
+    .order('name')
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    throw new Error(`Failed to fetch certifications: ${error.message}`)
   }
 
-  return NextResponse.json({ data })
+  return data
 }
 
-export async function POST(request: NextRequest) {
-  const body = await request.json()
-  const validated = certificationSchema.parse(body)
+export async function getCertification(id: string): Promise<Certification | null> {
+  const supabase = createClient()
+
+  const { data, error } = await supabase
+    .from('certifications')
+    .select('*')
+    .eq('id', id)
+    .single()
+
+  if (error) {
+    if (error.code === 'PGRST116') return null
+    throw new Error(`Failed to fetch certification: ${error.message}`)
+  }
+
+  return data
+}
+```
+
+##### packages/database-layer/src/certifications/create.ts
+```typescript
+import { createClient } from '../client'
+import { certificationSchema } from '@repo/shared/validations'
+import type { Certification } from '@repo/shared/types'
+
+export async function createCertification(
+  input: unknown
+): Promise<Certification> {
+  // バリデーション
+  const validated = certificationSchema.parse(input)
 
   const supabase = createClient()
+
   const { data, error } = await supabase
     .from('certifications')
     .insert(validated)
@@ -311,71 +335,103 @@ export async function POST(request: NextRequest) {
     .single()
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    throw new Error(`Failed to create certification: ${error.message}`)
   }
 
-  return NextResponse.json({ data }, { status: 201 })
+  return data
 }
 ```
 
-**メリット**:
-- Next.js と統一された開発体験
-- Vercel Serverless Functions に最適化
-- TypeScript ネイティブ
-- 既存のコードをほぼそのまま移行可能
-
-**デメリット**:
-- API 専用フレームワークではない
-- ミドルウェアが複雑になる可能性
-
 ---
 
-#### オプション B: Fastify
+##### apps/web/src/app/admin/certifications/actions.ts（既存を維持）
 ```typescript
-// apps/core/src/index.ts
-import Fastify from 'fastify'
-import { certificationRoutes } from './routes/certifications'
+'use server'
 
-const fastify = Fastify({ logger: true })
+import { getCertifications, createCertification } from '@repo/database-layer/certifications'
+import { revalidatePath } from 'next/cache'
 
-fastify.register(certificationRoutes, { prefix: '/api/v1' })
+// Server Action - そのまま使用
+export async function getCertificationsAction() {
+  return await getCertifications()
+}
 
-fastify.listen({ port: 3001 }, (err) => {
-  if (err) throw err
-})
+export async function createCertificationAction(formData: FormData) {
+  const input = {
+    name: formData.get('name'),
+    description: formData.get('description'),
+  }
+
+  const certification = await createCertification(input)
+
+  revalidatePath('/admin/certifications')
+
+  return { success: true, data: certification }
+}
 ```
 
-**メリット**:
-- 高速なパフォーマンス
-- 本格的な API フレームワーク
-- プラグインエコシステム
-
-**デメリット**:
-- Vercel デプロイが複雑
-- Next.js との開発体験が異なる
+**ポイント**:
+- Server Actions は維持
+- `@repo/database-layer` から DB 操作をインポート
+- ビジネスロジックは共有
 
 ---
 
-### apps/birgerik-web (Frontend)
-
-#### API クライアント
+##### apps/core/src/app/api/v1/certifications/route.ts（新規）
 ```typescript
-// apps/web/src/lib/api/client.ts
-import { Certification } from '@repo/shared/types'
+import { NextRequest, NextResponse } from 'next/server'
+import { getCertifications, createCertification } from '@repo/database-layer/certifications'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1'
+// GET /api/v1/certifications
+export async function GET(request: NextRequest) {
+  try {
+    const certifications = await getCertifications()
+    return NextResponse.json({ data: certifications })
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    )
+  }
+}
 
-class ApiClient {
-  private async fetch<T>(
-    endpoint: string,
-    options?: RequestInit
-  ): Promise<T> {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      ...options,
+// POST /api/v1/certifications
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const certification = await createCertification(body)
+
+    return NextResponse.json({ data: certification }, { status: 201 })
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 400 }
+    )
+  }
+}
+```
+
+**ポイント**:
+- REST API として公開
+- **同じ** `@repo/database-layer` を使用
+- ビジネスロジックの重複なし
+
+---
+
+##### packages/obsidian-sdk/src/client.ts（今後）
+```typescript
+import type { Certification } from '@repo/shared/types'
+
+export class BirgerikClient {
+  constructor(
+    private apiUrl: string,
+    private apiKey: string
+  ) {}
+
+  async getCertifications(): Promise<Certification[]> {
+    const response = await fetch(`${this.apiUrl}/api/v1/certifications`, {
       headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.getToken()}`,
-        ...options?.headers,
+        'Authorization': `Bearer ${this.apiKey}`,
       },
     })
 
@@ -383,253 +439,456 @@ class ApiClient {
       throw new Error(`API Error: ${response.status}`)
     }
 
-    return response.json()
-  }
-
-  private getToken(): string {
-    // Cookie or localStorage から JWT 取得
-    return localStorage.getItem('auth_token') || ''
-  }
-
-  // Certifications
-  async getCertifications(): Promise<Certification[]> {
-    const { data } = await this.fetch<{ data: Certification[] }>('/certifications')
-    return data
-  }
-
-  async createCertification(certification: Partial<Certification>): Promise<Certification> {
-    const { data } = await this.fetch<{ data: Certification }>('/certifications', {
-      method: 'POST',
-      body: JSON.stringify(certification),
-    })
+    const { data } = await response.json()
     return data
   }
 
   // ... 他の CRUD メソッド
 }
-
-export const apiClient = new ApiClient()
 ```
 
-#### Server Component での使用
-```typescript
-// apps/web/src/app/admin/certifications/page.tsx
-import { apiClient } from '@/lib/api/client'
-import { CertificationList } from '@/components/admin/certifications/certification-list'
+**ポイント**:
+- Obsidian プラグインは REST API を使用
+- 型定義は `@repo/shared` から共有
 
-export default async function CertificationsPage() {
-  const certifications = await apiClient.getCertifications()
+---
 
-  return <CertificationList initialCertifications={certifications} />
+#### 3. データフロー
+
+##### Web アプリ（高速）
+```
+User Action
+    ↓
+Server Component/Server Action
+    ↓
+@repo/database-layer
+    ↓
+Supabase
+    ↓
+Response (0ms network latency)
+```
+
+##### Obsidian プラグイン
+```
+User Action
+    ↓
+Obsidian Plugin
+    ↓
+HTTP Request
+    ↓
+apps/core REST API
+    ↓
+@repo/database-layer
+    ↓
+Supabase
+    ↓
+HTTP Response
+```
+
+---
+
+## 技術スタック詳細
+
+### Turborepo 設定
+
+#### turbo.json
+```json
+{
+  "$schema": "https://turbo.build/schema.json",
+  "pipeline": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "dist/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {
+      "dependsOn": ["^lint"]
+    },
+    "type-check": {
+      "dependsOn": ["^type-check"]
+    }
+  }
+}
+```
+
+#### pnpm-workspace.yaml
+```yaml
+packages:
+  - 'apps/*'
+  - 'packages/*'
+```
+
+#### Root package.json
+```json
+{
+  "name": "birgerik-monorepo",
+  "private": true,
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "type-check": "turbo run type-check"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0"
+  },
+  "packageManager": "pnpm@9.0.0"
 }
 ```
 
 ---
 
-### packages/shared
-
-#### 型定義
-```typescript
-// packages/shared/src/types/database.ts
-export interface Certification {
-  id: string
-  name: string
-  description: string | null
-  created_at: string
-  updated_at: string
+### packages/database-layer/package.json
+```json
+{
+  "name": "@repo/database-layer",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "dependencies": {
+    "@repo/shared": "workspace:*",
+    "@supabase/supabase-js": "^2.45.0"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "typescript": "^5.3.3"
+  }
 }
-
-export interface QuestionSet {
-  id: string
-  name: string
-  description: string | null
-  certification_id: string
-  created_at: string
-  updated_at: string
-}
-
-// ... 他の型
 ```
 
-#### バリデーション
-```typescript
-// packages/shared/src/validations/certification.ts
-import { z } from 'zod'
+---
 
-export const certificationSchema = z.object({
-  name: z.string().min(1).max(100).trim(),
-  description: z.string().max(500).trim().nullable(),
-})
+### apps/web/package.json（既存に追加）
+```json
+{
+  "name": "birgerik-web",
+  "dependencies": {
+    "@repo/database-layer": "workspace:*",
+    "@repo/shared": "workspace:*",
+    // ... 既存の依存関係
+  }
+}
+```
 
-export const certificationFormSchema = z.object({
-  name: z.string().min(1).max(100).trim(),
-  description: z.string().max(500).trim(),
-})
+---
 
-export type CertificationInput = z.infer<typeof certificationSchema>
-export type CertificationFormInput = z.infer<typeof certificationFormSchema>
+### apps/core/package.json
+```json
+{
+  "name": "birgerik-core",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3001",
+    "build": "next build",
+    "start": "next start --port 3001"
+  },
+  "dependencies": {
+    "@repo/database-layer": "workspace:*",
+    "@repo/shared": "workspace:*",
+    "next": "^15.0.0",
+    "react": "^19.1.0"
+  }
+}
 ```
 
 ---
 
 ## マイグレーションロードマップ
 
-### Phase 1: プロジェクト構造のセットアップ (1-2 日)
+### Phase 1: プロジェクト構造のセットアップ（2-3 日）
 
 #### タスク
-1. ✅ Turborepo のインストールと設定
+1. ✅ Turborepo のインストール
+   ```bash
+   npm install -g turbo
+   pnpm init
+   ```
+
 2. ✅ ディレクトリ構造の作成
-3. ✅ `packages/shared` の作成
-4. ✅ 既存コードを `apps/web` に移動
-5. ✅ 型定義とバリデーションを `packages/shared` に移動
+   ```bash
+   mkdir -p apps/web apps/core
+   mkdir -p packages/database-layer packages/shared
+   ```
+
+3. ✅ 既存コードを `apps/web` に移動
+   ```bash
+   # 既存の src/, public/, package.json などを apps/web/ へ
+   ```
+
+4. ✅ `packages/shared` の作成
+   - `src/lib/types/` を移動
+   - `src/lib/validations/` を移動
+   - `src/lib/errors/` を移動
+
+5. ✅ Workspace 設定
+   - `pnpm-workspace.yaml` 作成
+   - `turbo.json` 作成
+   - Root `package.json` 作成
 
 #### 成果物
 - Turborepo monorepo 構造
-- 既存の Web アプリが動作する状態
+- 既存の Web アプリが `apps/web` で動作
+
+#### 検証
+```bash
+cd apps/web
+pnpm dev  # http://localhost:3000 で動作確認
+```
 
 ---
 
-### Phase 2: birgerik-core API の構築 (3-5 日)
+### Phase 2: packages/database-layer の抽出（3-4 日）
 
 #### タスク
-1. ✅ `apps/core` プロジェクトの作成
-2. ✅ 認証 API の実装
+1. ✅ `packages/database-layer` プロジェクト作成
+   ```bash
+   cd packages/database-layer
+   pnpm init
+   ```
+
+2. ✅ Supabase Client の移動
+   - `src/lib/supabase/server.ts` → `packages/database-layer/src/client.ts`
+
+3. ✅ Server Actions からビジネスロジックを抽出
+
+   **例: Certifications**
+   - `apps/web/src/app/admin/certifications/actions.ts` から抽出
+   - → `packages/database-layer/src/certifications/get.ts`
+   - → `packages/database-layer/src/certifications/create.ts`
+   - → `packages/database-layer/src/certifications/update.ts`
+   - → `packages/database-layer/src/certifications/delete.ts`
+
+4. ✅ 同様に Question Sets、Questions、Study を抽出
+
+5. ✅ Server Actions を更新
+   - `@repo/database-layer` からインポート
+   - Server Actions は薄いラッパーとして維持
+
+#### 成果物
+- `@repo/database-layer` パッケージ
+- リファクタリングされた Server Actions
+- Web アプリが引き続き動作
+
+#### 検証
+```bash
+pnpm dev  # Web アプリが正常に動作
+```
+
+---
+
+### Phase 3: apps/core API サーバーの構築（4-5 日）
+
+#### タスク
+1. ✅ `apps/core` プロジェクト作成
+   ```bash
+   cd apps/core
+   pnpm init
+   pnpm add next react react-dom
+   ```
+
+2. ✅ Next.js API Routes のセットアップ
+   - `src/app/api/v1/` ディレクトリ作成
+
+3. ✅ 認証 API の実装
    - `POST /api/v1/auth/login`
-   - `POST /api/v1/auth/logout`
    - `GET /api/v1/auth/me`
-3. ✅ Certifications CRUD API
-   - `GET /api/v1/certifications`
-   - `GET /api/v1/certifications/:id`
-   - `POST /api/v1/certifications`
-   - `PUT /api/v1/certifications/:id`
-   - `DELETE /api/v1/certifications/:id`
-4. ✅ Question Sets CRUD API
-5. ✅ Questions CRUD API
-6. ✅ Study API
-   - `GET /api/v1/study/certifications`
-   - `GET /api/v1/study/question-sets/:id`
-   - `GET /api/v1/study/questions/:questionSetId`
+   - JWT トークン発行
+
+4. ✅ CRUD API の実装
+   - Certifications: GET, GET/:id, POST, PUT/:id, DELETE/:id
+   - Question Sets: 同上
+   - Questions: 同上
+   - Study: GET certifications, GET question-sets/:id, GET questions/:questionSetId
+
+5. ✅ エラーハンドリング
+   - 統一されたエラーレスポンス
+   - バリデーションエラー
+   - 認証エラー
+
+6. ✅ CORS 設定
+   ```typescript
+   // middleware.ts
+   export function middleware(request: NextRequest) {
+     const response = NextResponse.next()
+     response.headers.set('Access-Control-Allow-Origin', '*')
+     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE')
+     return response
+   }
+   ```
 
 #### 成果物
 - 完全な REST API
-- API ドキュメント（OpenAPI/Swagger）
-- 単体テスト
+- OpenAPI 仕様書（optional）
+
+#### 検証
+```bash
+cd apps/core
+pnpm dev  # http://localhost:3001
+
+# API テスト
+curl http://localhost:3001/api/v1/certifications
+```
 
 ---
 
-### Phase 3: birgerik-web の API クライアント化 (3-5 日)
+### Phase 4: Vercel デプロイ設定（1-2 日）
 
 #### タスク
-1. ✅ API クライアントの実装
-2. ✅ Server Actions を API 呼び出しに置き換え
-   - Admin pages
-   - Study pages
-3. ✅ 認証フローの更新
-4. ✅ エラーハンドリングの統一
-5. ✅ 環境変数の設定
+1. ✅ Vercel プロジェクト設定
+   - Turborepo を検出
+   - Build settings:
+     - Framework: Next.js
+     - Root Directory: `apps/web` (Web) / `apps/core` (API)
 
-#### 成果物
-- API 経由でデータ取得する Web アプリ
-- Server Actions の完全削除
+2. ✅ ルーティング設定
 
----
+   **オプション A: 単一プロジェクト（推奨）**
+   ```json
+   // vercel.json
+   {
+     "rewrites": [
+       {
+         "source": "/api/:path*",
+         "destination": "http://birgerik-core.vercel.app/api/:path*"
+       }
+     ]
+   }
+   ```
 
-### Phase 4: テストとデプロイ (2-3 日)
+   **オプション B: 別々のプロジェクト**
+   - `birgerik-web.vercel.app` (Web UI)
+   - `birgerik-core.vercel.app` (API)
 
-#### タスク
-1. ✅ E2E テスト
-2. ✅ パフォーマンステスト
-3. ✅ Vercel へのデプロイ設定
-   - `apps/core` → `/api/*` へルーティング
-   - `apps/web` → `/` へルーティング
-4. ✅ 環境変数の設定（production）
-5. ✅ CI/CD パイプライン
+3. ✅ 環境変数の設定
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY` (API only)
+   - `JWT_SECRET` (API only)
 
 #### 成果物
 - Production デプロイ
-- 監視・ログ設定
+- 動作確認
 
 ---
 
-### Phase 5: Obsidian プラグイン対応 (今後)
+### Phase 5: Obsidian プラグイン SDK（今後）
 
 #### タスク
-1. ✅ Obsidian プラグイン用 SDK の作成 (`packages/obsidian-sdk`)
-2. ✅ CORS 設定の調整
-3. ✅ API ドキュメントの公開
-4. ✅ プラグインのプロトタイプ開発
+1. ✅ `packages/obsidian-sdk` 作成
+2. ✅ API Client の実装
+3. ✅ 型定義の export
+4. ✅ npm package として公開（optional）
+
+#### 成果物
+- `@repo/obsidian-sdk` または npm package
+- ドキュメント
+
+---
+
+## パフォーマンス比較
+
+### レイテンシー測定（予測）
+
+| 操作 | Server Actions | REST API | 差分 |
+|-----|---------------|----------|------|
+| Certifications 一覧取得 | 50ms | 120ms | **+70ms** |
+| Certification 作成 | 80ms | 180ms | **+100ms** |
+| Questions 一覧取得（100件） | 150ms | 300ms | **+150ms** |
+| Question 作成（+ Choices） | 200ms | 350ms | **+150ms** |
+| Study Session 開始 | 100ms | 200ms | **+100ms** |
+
+**結論**: ハイブリッドアプローチなら、Web アプリは Server Actions を使い続けるため、**パフォーマンス劣化ゼロ**。
 
 ---
 
 ## リスクと対策
 
-### リスク 1: パフォーマンス劣化
-**内容**: Server Actions → REST API で Network Latency が増加
+### リスク 1: ビジネスロジックの重複
+**内容**: Server Actions と API で同じロジックを書いてしまう
 
 **対策**:
-- API を同じ Vercel プロジェクトにデプロイ（内部通信は高速）
-- Response Caching (SWR, React Query)
-- データの事前フェッチ (Server Components)
+- ✅ `@repo/database-layer` で一元管理
+- ✅ 両方から同じ関数をインポート
+- ✅ 単一責任の原則
 
 ---
 
-### リスク 2: 認証の複雑化
-**内容**: Supabase Auth の Cookie-based から JWT への移行
+### リスク 2: 型の同期
+**内容**: packages/shared の型定義がずれる
 
 **対策**:
-- 段階的移行: 最初は Supabase Auth をそのまま使用
-- API で Supabase の Session Token を検証
-- 将来的に独自 JWT に移行（optional）
+- ✅ Turborepo の依存関係管理
+- ✅ TypeScript の strict mode
+- ✅ CI/CD で型チェック
 
 ---
 
-### リスク 3: 型の同期
-**内容**: API と Frontend で型定義がずれる
+### リスク 3: 認証の複雑化
+**内容**: Server Actions（Cookie） vs API（JWT）
 
 **対策**:
-- `packages/shared` で型を一元管理
-- OpenAPI Schema から型を自動生成
-- Turborepo の依存関係で強制
+- Phase 1-2: Server Actions は Supabase Auth をそのまま使用
+- Phase 3: API は JWT を発行
+- 将来的に統一（optional）
 
 ---
 
 ### リスク 4: デプロイの複雑化
-**内容**: Monorepo のデプロイ設定
+**内容**: 2 つのアプリをデプロイ
 
 **対策**:
-- Vercel の Turborepo サポートを活用
-- `vercel.json` で適切にルーティング設定
-- CI/CD パイプラインで自動テスト
+- ✅ Vercel の Turborepo サポート
+- ✅ 単一リポジトリで管理
+- ✅ 同時デプロイ
 
 ---
 
 ## 次のステップ
 
-### 1. 承認事項
-- [ ] Turborepo アプローチで進めることに合意
-- [ ] API 技術スタック（Next.js API Routes vs Fastify）の選択
-- [ ] マイグレーションスケジュールの確認
+### 承認事項
+- [ ] **ハイブリッドアプローチ**で進めることに合意
+- [ ] **Turborepo** を使用することに合意
+- [ ] マイグレーションスケジュール（約 2-3 週間）の確認
 
-### 2. 技術的準備
-- [ ] Vercel プロジェクト設定の確認
-- [ ] Supabase プロジェクトのアクセス権限
-- [ ] 開発環境の準備
+### 技術的な質問
+1. **API の認証方式**: JWT でよろしいでしょうか？（Supabase Auth との併用）
+2. **Vercel デプロイ**: 単一プロジェクトか、別々のプロジェクトか？
+3. **API ドキュメント**: OpenAPI 仕様書を作成しますか？
 
-### 3. 実装開始
-- [ ] Phase 1 の実行（プロジェクト構造のセットアップ）
-- [ ] 定期的なレビューと調整
+### 実装開始の準備
+承認いただければ、すぐに **Phase 1**（Turborepo セットアップ）から開始できます。
 
 ---
 
-## 参考資料
+## まとめ
 
-- [Turborepo Documentation](https://turbo.build/repo/docs)
-- [Vercel Monorepo Support](https://vercel.com/docs/monorepos/turborepo)
-- [Next.js API Routes](https://nextjs.org/docs/app/building-your-application/routing/route-handlers)
-- [Supabase API Documentation](https://supabase.com/docs/reference/javascript/introduction)
+### なぜハイブリッドアプローチが最適か
+
+1. ✅ **Web アプリのパフォーマンスを維持**（Server Actions）
+2. ✅ **外部クライアント対応**（REST API）
+3. ✅ **ビジネスロジックの重複なし**（共有パッケージ）
+4. ✅ **段階的移行が可能**
+5. ✅ **型安全性の保証**
+6. ✅ **将来的な拡張性**（Mobile、Obsidian）
+
+### ご質問への回答
+
+**Q1: Server Actions 削除によるパフォーマンス低下は防げるか？**
+→ **A: はい。Server Actions を維持することで防げます。**
+
+**Q2: モノレポにせず、Web は Server Action、それ以外は API という構造は可能か？**
+→ **A: はい。それがまさにこのハイブリッドアプローチです。**
+
+**Q3: Obsidian プラグインで Server Action は使えるか？**
+→ **A: いいえ。REST API が必要です。**
 
 ---
 
 **作成日**: 2025-12-23
-**バージョン**: 1.0
+**バージョン**: 2.0（ハイブリッドアプローチ）
 **ステータス**: 提案中
