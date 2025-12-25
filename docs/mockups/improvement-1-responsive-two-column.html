@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>改善案1: レスポンシブ2カラム + 選択肢下半分配置</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #1e1e1e;
+      color: #dcddde;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    .container {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    .header {
+      background: #252525;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #333;
+      flex-shrink: 0;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-icon {
+      font-size: 22px;
+    }
+
+    .header-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .header-close {
+      background: none;
+      border: none;
+      color: #8e8e8e;
+      cursor: pointer;
+      font-size: 20px;
+      padding: 8px;
+      min-width: 40px;
+      min-height: 40px;
+    }
+
+    /* Progress Bar */
+    .progress-bar {
+      background: #2a2a2a;
+      height: 3px;
+      flex-shrink: 0;
+    }
+
+    .progress-fill {
+      background: linear-gradient(90deg, #4a9eff, #5ca8ff);
+      height: 100%;
+      transition: width 0.3s;
+    }
+
+    /* Main Content Area */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* レスポンシブレイアウト */
+    @media (min-width: 768px) {
+      .main-content {
+        flex-direction: row;
+      }
+
+      .question-panel {
+        flex: 1;
+        border-right: 1px solid #333;
+        overflow-y: auto;
+      }
+
+      .choices-panel {
+        flex: 1;
+        overflow-y: auto;
+      }
+    }
+
+    /* Question Panel */
+    .question-panel {
+      flex-shrink: 0;
+      padding: 24px;
+      background: #1e1e1e;
+    }
+
+    @media (max-width: 767px) {
+      .question-panel {
+        flex: 0 0 auto;
+        max-height: 40vh;
+        overflow-y: auto;
+        border-bottom: 1px solid #333;
+      }
+    }
+
+    .question-number {
+      font-size: 13px;
+      color: #8e8e8e;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .question-text {
+      font-size: 16px;
+      line-height: 1.7;
+      color: #dcddde;
+      margin-bottom: 20px;
+    }
+
+    .question-meta {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .meta-badge {
+      background: #2d2d2d;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      color: #8e8e8e;
+    }
+
+    /* Choices Panel */
+    .choices-panel {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: #1a1a1a;
+    }
+
+    @media (max-width: 767px) {
+      .choices-panel {
+        flex: 1;
+        justify-content: center;
+        padding-bottom: 100px;
+      }
+    }
+
+    .choice {
+      background: #2d2d2d;
+      border: 2px solid #3d3d3d;
+      border-radius: 10px;
+      padding: 16px 18px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-height: 60px;
+    }
+
+    @media (min-width: 768px) {
+      .choice {
+        min-height: auto;
+        padding: 14px 16px;
+      }
+    }
+
+    .choice:active {
+      transform: scale(0.98);
+    }
+
+    .choice:hover {
+      background: #353535;
+      border-color: #4d4d4d;
+    }
+
+    .choice.selected {
+      background: #264f78;
+      border-color: #4a9eff;
+      box-shadow: 0 0 0 3px rgba(74, 158, 255, 0.1);
+    }
+
+    .choice.correct {
+      background: #1e3a1e;
+      border-color: #2ea043;
+      box-shadow: 0 0 0 3px rgba(46, 160, 67, 0.1);
+    }
+
+    .choice.wrong {
+      background: #3a1e1e;
+      border-color: #da3633;
+      box-shadow: 0 0 0 3px rgba(218, 54, 51, 0.1);
+    }
+
+    .choice-marker {
+      width: 22px;
+      height: 22px;
+      border: 3px solid #5d5d5d;
+      border-radius: 50%;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .choice.selected .choice-marker {
+      background: #4a9eff;
+      border-color: #4a9eff;
+    }
+
+    .choice.correct .choice-marker {
+      background: #2ea043;
+      border-color: #2ea043;
+    }
+
+    .choice.correct .choice-marker::after {
+      content: '✓';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .choice.wrong .choice-marker {
+      background: #da3633;
+      border-color: #da3633;
+    }
+
+    .choice.wrong .choice-marker::after {
+      content: '✕';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .choice-text {
+      flex: 1;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    /* Explanation */
+    .explanation {
+      background: #2a2445;
+      border-left: 3px solid #7e69c4;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 20px;
+      animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .explanation-header {
+      font-weight: 600;
+      color: #b9a5ff;
+      margin-bottom: 8px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .explanation-text {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #dcddde;
+    }
+
+    /* Bottom Bar */
+    .bottom-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #252525;
+      border-top: 1px solid #333;
+      padding: 16px 20px;
+      padding-bottom: calc(16px + env(safe-area-inset-bottom));
+      z-index: 100;
+    }
+
+    .btn-primary {
+      background: #4a9eff;
+      color: #fff;
+      border: none;
+      padding: 14px 24px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      min-height: 50px;
+      transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(74, 158, 255, 0.3);
+    }
+
+    .btn-primary:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary:disabled {
+      background: #3d3d3d;
+      color: #6e6e6e;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .btn-primary:not(:disabled):hover {
+      background: #5ca8ff;
+    }
+
+    /* Label on mobile */
+    .mobile-label {
+      font-size: 12px;
+      color: #8e8e8e;
+      text-align: center;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    @media (min-width: 768px) {
+      .mobile-label {
+        display: none;
+      }
+    }
+
+    /* Desktop adjustments */
+    @media (min-width: 768px) {
+      .choices-panel {
+        padding: 32px;
+      }
+
+      .question-panel {
+        padding: 32px;
+      }
+
+      .bottom-bar {
+        position: static;
+        background: transparent;
+        border-top: none;
+        padding: 0;
+        margin-top: 20px;
+      }
+
+      .btn-primary {
+        max-width: 300px;
+        margin: 0 auto;
+        display: block;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-left">
+        <span class="header-icon">📖</span>
+        <span class="header-title">学習モード</span>
+      </div>
+      <button class="header-close">✕</button>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="progress-bar">
+      <div class="progress-fill" style="width: 6.67%"></div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Question Panel (左側 / 上部) -->
+      <div class="question-panel">
+        <div class="question-number">
+          <span>問題 1 / 15</span>
+          <span>6% 完了</span>
+        </div>
+
+        <div class="question-text">
+          VPCで異なるアベイラビリティーゾーン（AZ）間の通信に料金が発生するのはどの場合ですか？
+        </div>
+
+        <div class="question-meta">
+          <span class="meta-badge">🏷️ VPC</span>
+          <span class="meta-badge">💰 料金</span>
+        </div>
+      </div>
+
+      <!-- Choices Panel (右側 / 下部) -->
+      <div class="choices-panel">
+        <div class="mobile-label">選択肢を選んでください</div>
+
+        <div class="choice" onclick="selectChoice(this)">
+          <div class="choice-marker"></div>
+          <div class="choice-text">同じリージョン内の異なるAZ間</div>
+        </div>
+
+        <div class="choice" onclick="selectChoice(this)">
+          <div class="choice-marker"></div>
+          <div class="choice-text">同じAZ内の通信</div>
+        </div>
+
+        <div class="choice" onclick="selectChoice(this)">
+          <div class="choice-marker"></div>
+          <div class="choice-text">インターネットゲートウェイ経由の通信</div>
+        </div>
+
+        <div class="choice" onclick="selectChoice(this)">
+          <div class="choice-marker"></div>
+          <div class="choice-text">VPCピアリング接続の通信</div>
+        </div>
+
+        <!-- Desktop用のボタン配置 -->
+        <div class="bottom-bar">
+          <button class="btn-primary" id="answerBtn" disabled onclick="checkAnswer()">回答を確認</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile用のボタン配置 -->
+    <div class="bottom-bar" style="display: none;">
+      <button class="btn-primary" id="answerBtnMobile" disabled onclick="checkAnswer()">回答を確認</button>
+    </div>
+  </div>
+
+  <script>
+    let selectedChoice = null;
+
+    // ボタンの表示切り替え
+    function updateButtonVisibility() {
+      const isMobile = window.innerWidth < 768;
+      const desktopBar = document.querySelector('.choices-panel .bottom-bar');
+      const mobileBar = document.querySelector('.container > .bottom-bar');
+
+      if (isMobile) {
+        desktopBar.style.display = 'none';
+        mobileBar.style.display = 'block';
+      } else {
+        desktopBar.style.display = 'block';
+        mobileBar.style.display = 'none';
+      }
+    }
+
+    window.addEventListener('resize', updateButtonVisibility);
+    updateButtonVisibility();
+
+    function selectChoice(choice) {
+      document.querySelectorAll('.choice').forEach(c => c.classList.remove('selected'));
+      choice.classList.add('selected');
+      selectedChoice = choice;
+
+      // 両方のボタンを有効化
+      document.getElementById('answerBtn').disabled = false;
+      document.getElementById('answerBtnMobile').disabled = false;
+    }
+
+    function checkAnswer() {
+      const choices = document.querySelectorAll('.choice');
+      choices[0].classList.add('correct');
+
+      if (selectedChoice !== choices[0]) {
+        selectedChoice.classList.add('wrong');
+      }
+
+      // 解説を問題パネルに追加
+      const explanation = document.createElement('div');
+      explanation.className = 'explanation';
+      explanation.innerHTML = `
+        <div class="explanation-header">
+          <span>💡</span>
+          <span>解説</span>
+        </div>
+        <div class="explanation-text">
+          同じリージョン内の異なるAZ間で通信する場合、データ転送料金が発生します。
+          同じAZ内の通信は無料ですが、AZをまたぐとGB単位で課金されます。
+        </div>
+      `;
+      document.querySelector('.question-panel').appendChild(explanation);
+
+      // ボタンテキストを変更
+      document.getElementById('answerBtn').textContent = '次の問題へ';
+      document.getElementById('answerBtnMobile').textContent = '次の問題へ';
+      document.getElementById('answerBtn').onclick = () => alert('次の問題へ');
+      document.getElementById('answerBtnMobile').onclick = () => alert('次の問題へ');
+    }
+  </script>
+</body>
+</html>
