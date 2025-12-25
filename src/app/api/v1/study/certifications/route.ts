@@ -1,19 +1,9 @@
 import { NextResponse } from 'next/server'
 import { successResponse, errorResponse } from '@/lib/api/response'
 import { getCertificationsWithQuestionSets } from '@/lib/database/study'
-import { unstable_cache } from 'next/cache'
 
-// キャッシュ設定（60秒）
-const getCachedCertificationsWithQuestionSets = unstable_cache(
-  async () => {
-    return await getCertificationsWithQuestionSets()
-  },
-  ['study-certifications'],
-  {
-    revalidate: 60,
-    tags: ['certifications', 'question-sets']
-  }
-)
+// Next.js Route Segment Config - 60秒キャッシュ
+export const revalidate = 60
 
 /**
  * GET /api/v1/study/certifications
@@ -22,7 +12,7 @@ const getCachedCertificationsWithQuestionSets = unstable_cache(
  */
 export async function GET() {
   try {
-    const result = await getCachedCertificationsWithQuestionSets()
+    const result = await getCertificationsWithQuestionSets()
 
     if (result.error) {
       return errorResponse(result.error, 500)
@@ -33,6 +23,8 @@ export async function GET() {
     // CORSヘッダーを追加（すべてのオリジンを許可）
     response.headers.set('Access-Control-Allow-Origin', '*')
     response.headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS')
+    // キャッシュヘッダー（60秒）
+    response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=30')
 
     return response
   } catch (error) {

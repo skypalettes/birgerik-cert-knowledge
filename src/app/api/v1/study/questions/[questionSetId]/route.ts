@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server'
 import { successResponse, errorResponse, notFoundResponse } from '@/lib/api/response'
 import { getQuestionsWithChoices } from '@/lib/database/study'
-import { unstable_cache } from 'next/cache'
+
+// Next.js Route Segment Config - 60秒キャッシュ
+export const revalidate = 60
 
 /**
  * GET /api/v1/study/questions/[questionSetId]
@@ -15,18 +17,7 @@ export async function GET(
   try {
     const { questionSetId } = await params
 
-    const getCachedQuestionsWithChoices = unstable_cache(
-      async (setId: string) => {
-        return await getQuestionsWithChoices(setId)
-      },
-      [`study-questions-${questionSetId}`],
-      {
-        revalidate: 60,
-        tags: [`question-set-${questionSetId}`, 'questions']
-      }
-    )
-
-    const result = await getCachedQuestionsWithChoices(questionSetId)
+    const result = await getQuestionsWithChoices(questionSetId)
 
     if (result.error) {
       if (result.error.includes('見つかりません')) {
@@ -40,6 +31,8 @@ export async function GET(
     // CORSヘッダーを追加（すべてのオリジンを許可）
     response.headers.set('Access-Control-Allow-Origin', '*')
     response.headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS')
+    // キャッシュヘッダー（60秒）
+    response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=30')
 
     return response
   } catch (error) {
