@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>最終案: シンプルボトムシート</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #1e1e1e;
+      color: #dcddde;
+      line-height: 1.6;
+      overflow: hidden;
+      height: 100vh;
+    }
+
+    .container {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    .header {
+      background: #252525;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #333;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-icon {
+      font-size: 22px;
+    }
+
+    .header-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .header-close {
+      background: none;
+      border: none;
+      color: #8e8e8e;
+      cursor: pointer;
+      font-size: 20px;
+      padding: 8px;
+      min-width: 40px;
+      min-height: 40px;
+      transition: color 0.2s;
+    }
+
+    .header-close:hover {
+      color: #dcddde;
+    }
+
+    /* Progress Bar */
+    .progress-bar {
+      background: #2a2a2a;
+      height: 3px;
+      flex-shrink: 0;
+    }
+
+    .progress-fill {
+      background: linear-gradient(90deg, #4a9eff, #5ca8ff);
+      height: 100%;
+      transition: width 0.3s;
+    }
+
+    /* Question Area (上部 40%) */
+    .question-area {
+      flex: 0 0 40vh;
+      overflow-y: auto;
+      padding: 24px;
+      background: #1e1e1e;
+      border-bottom: 1px solid #2a2a2a;
+    }
+
+    /* スクロールバーのスタイリング */
+    .question-area::-webkit-scrollbar,
+    .choices-container::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .question-area::-webkit-scrollbar-track,
+    .choices-container::-webkit-scrollbar-track {
+      background: #2a2a2a;
+    }
+
+    .question-area::-webkit-scrollbar-thumb,
+    .choices-container::-webkit-scrollbar-thumb {
+      background: #4d4d4d;
+      border-radius: 4px;
+    }
+
+    .question-area::-webkit-scrollbar-thumb:hover,
+    .choices-container::-webkit-scrollbar-thumb:hover {
+      background: #5d5d5d;
+    }
+
+    .question-meta {
+      font-size: 13px;
+      color: #8e8e8e;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .question-text {
+      font-size: 17px;
+      line-height: 1.8;
+      color: #dcddde;
+      margin-bottom: 20px;
+    }
+
+    .question-tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .tag {
+      background: #2d2d2d;
+      border: 1px solid #3d3d3d;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      color: #8e8e8e;
+    }
+
+    /* Explanation */
+    .explanation {
+      background: #2a2445;
+      border: 1px solid #3a3465;
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 20px;
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .explanation-header {
+      font-weight: 600;
+      color: #b9a5ff;
+      margin-bottom: 8px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .explanation-text {
+      font-size: 14px;
+      line-height: 1.7;
+      color: #dcddde;
+    }
+
+    /* Bottom Sheet (下部 60%) */
+    .bottom-sheet {
+      flex: 1;
+      background: #252525;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Sheet Header */
+    .sheet-header {
+      padding: 16px 20px 12px;
+      border-bottom: 1px solid #2a2a2a;
+      flex-shrink: 0;
+    }
+
+    .sheet-title {
+      font-size: 13px;
+      color: #8e8e8e;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Choices Container (スクロール可能) */
+    .choices-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    .choice {
+      background: #2d2d2d;
+      border: 2px solid #3d3d3d;
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-height: 68px;
+    }
+
+    .choice:active {
+      transform: scale(0.98);
+    }
+
+    .choice:hover {
+      background: #353535;
+      border-color: #4d4d4d;
+    }
+
+    .choice.selected {
+      background: #264f78;
+      border-color: #4a9eff;
+      box-shadow: 0 0 0 3px rgba(74, 158, 255, 0.15);
+    }
+
+    .choice.correct {
+      background: #1e3a1e;
+      border-color: #2ea043;
+      box-shadow: 0 0 0 3px rgba(46, 160, 67, 0.15);
+    }
+
+    .choice.wrong {
+      background: #3a1e1e;
+      border-color: #da3633;
+      box-shadow: 0 0 0 3px rgba(218, 54, 51, 0.15);
+    }
+
+    .choice-marker {
+      width: 24px;
+      height: 24px;
+      border: 3px solid #5d5d5d;
+      border-radius: 50%;
+      flex-shrink: 0;
+      position: relative;
+      transition: all 0.2s;
+    }
+
+    .choice.selected .choice-marker {
+      background: #4a9eff;
+      border-color: #4a9eff;
+    }
+
+    .choice.correct .choice-marker {
+      background: #2ea043;
+      border-color: #2ea043;
+    }
+
+    .choice.correct .choice-marker::after {
+      content: '✓';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .choice.wrong .choice-marker {
+      background: #da3633;
+      border-color: #da3633;
+    }
+
+    .choice.wrong .choice-marker::after {
+      content: '✕';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .choice-text {
+      flex: 1;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    /* Action Button */
+    .sheet-action {
+      padding: 16px 20px;
+      padding-bottom: calc(16px + env(safe-area-inset-bottom));
+      background: #252525;
+      border-top: 1px solid #2a2a2a;
+      flex-shrink: 0;
+    }
+
+    .btn-primary {
+      background: #4a9eff;
+      color: #fff;
+      border: none;
+      padding: 14px 24px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      min-height: 52px;
+      transition: all 0.2s;
+      box-shadow: 0 2px 12px rgba(74, 158, 255, 0.3);
+    }
+
+    .btn-primary:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary:not(:disabled):hover {
+      background: #5ca8ff;
+      box-shadow: 0 4px 16px rgba(74, 158, 255, 0.4);
+    }
+
+    .btn-primary:disabled {
+      background: #3d3d3d;
+      color: #6e6e6e;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    /* PC対応: より広い画面では横幅を制限 */
+    @media (min-width: 1024px) {
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+      }
+
+      .question-area {
+        padding: 32px 40px;
+      }
+
+      .choices-container {
+        padding: 24px 40px;
+      }
+
+      .sheet-action {
+        padding: 20px 40px;
+      }
+    }
+
+    /* タブレット対応 */
+    @media (min-width: 768px) and (max-width: 1023px) {
+      .question-area {
+        padding: 28px 32px;
+      }
+
+      .choices-container {
+        padding: 20px 32px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-left">
+        <span class="header-icon">📖</span>
+        <span class="header-title">学習モード</span>
+      </div>
+      <button class="header-close">✕</button>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="progress-bar">
+      <div class="progress-fill" style="width: 6.67%"></div>
+    </div>
+
+    <!-- Question Area (スクロール可能) -->
+    <div class="question-area">
+      <div class="question-meta">
+        <span>問題 1 / 15</span>
+        <span>6% 完了</span>
+      </div>
+
+      <div class="question-text">
+        VPCで異なるアベイラビリティーゾーン（AZ）間の通信に料金が発生するのはどの場合ですか？
+      </div>
+
+      <div class="question-tags">
+        <span class="tag">🏷️ VPC</span>
+        <span class="tag">💰 料金</span>
+        <span class="tag">📍 AZ</span>
+      </div>
+    </div>
+
+    <!-- Bottom Sheet -->
+    <div class="bottom-sheet">
+      <!-- Sheet Header -->
+      <div class="sheet-header">
+        <div class="sheet-title">選択肢を選んでください</div>
+      </div>
+
+      <!-- Choices (スクロール可能) -->
+      <div class="choices-container">
+        <div class="choice" onclick="selectChoice(this)">
+          <div class="choice-marker"></div>
+          <div class="choice-text">同じリージョン内の異なるAZ間</div>
+        </div>
+
+        <div class="choice" onclick="selectChoice(this)">
+          <div class="choice-marker"></div>
+          <div class="choice-text">同じAZ内の通信</div>
+        </div>
+
+        <div class="choice" onclick="selectChoice(this)">
+          <div class="choice-marker"></div>
+          <div class="choice-text">インターネットゲートウェイ経由の通信</div>
+        </div>
+
+        <div class="choice" onclick="selectChoice(this)">
+          <div class="choice-marker"></div>
+          <div class="choice-text">VPCピアリング接続の通信</div>
+        </div>
+
+        <!-- デモ用：選択肢が多い場合のスクロールテスト用 -->
+        <!--
+        <div class="choice" onclick="selectChoice(this)">
+          <div class="choice-marker"></div>
+          <div class="choice-text">選択肢5（スクロールテスト用）</div>
+        </div>
+        <div class="choice" onclick="selectChoice(this)">
+          <div class="choice-marker"></div>
+          <div class="choice-text">選択肢6（スクロールテスト用）</div>
+        </div>
+        -->
+      </div>
+
+      <!-- Action Button -->
+      <div class="sheet-action">
+        <button class="btn-primary" id="answerBtn" disabled onclick="checkAnswer()">回答を確認</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let selectedChoice = null;
+
+    function selectChoice(choice) {
+      document.querySelectorAll('.choice').forEach(c => c.classList.remove('selected'));
+      choice.classList.add('selected');
+      selectedChoice = choice;
+      document.getElementById('answerBtn').disabled = false;
+    }
+
+    function checkAnswer() {
+      const choices = document.querySelectorAll('.choice');
+      choices[0].classList.add('correct');
+
+      if (selectedChoice !== choices[0]) {
+        selectedChoice.classList.add('wrong');
+      }
+
+      // 解説を問題エリアに追加
+      const explanation = document.createElement('div');
+      explanation.className = 'explanation';
+      explanation.innerHTML = `
+        <div class="explanation-header">
+          <span>💡</span>
+          <span>解説</span>
+        </div>
+        <div class="explanation-text">
+          同じリージョン内の異なるAZ間で通信する場合、データ転送料金が発生します。
+          同じAZ内の通信は無料ですが、AZをまたぐとGB単位で課金されます。
+        </div>
+      `;
+
+      const questionArea = document.querySelector('.question-area');
+      questionArea.appendChild(explanation);
+
+      // 解説が追加されたら自動的に下にスクロール
+      setTimeout(() => {
+        questionArea.scrollTop = questionArea.scrollHeight;
+      }, 100);
+
+      // ボタンテキストを変更
+      document.getElementById('answerBtn').textContent = '次の問題へ';
+      document.getElementById('answerBtn').onclick = () => {
+        alert('次の問題へ進みます');
+      };
+    }
+  </script>
+</body>
+</html>
