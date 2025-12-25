@@ -1,5 +1,5 @@
 import { createStore } from 'zustand/vanilla'
-import { useStore as useZustandStore } from 'zustand'
+import { useSyncExternalStore } from 'preact/compat'
 import type {
   QuestionWithChoices,
   UserAnswer,
@@ -241,13 +241,23 @@ export const studyStore = createStore<StudyStore>((set, get) => ({
 }))
 
 /**
- * Preact用のフック
+ * Preact用のフック（セレクター付き）
  */
 export function useStudyStore<T>(selector: (state: StudyStore) => T): T {
-  return useZustandStore(studyStore, selector)
+  return useSyncExternalStore(
+    studyStore.subscribe,
+    () => selector(studyStore.getState()),
+    () => selector(studyStore.getState())
+  )
 }
 
-// デフォルトエクスポート（全ての状態を取得）
-export function useStudyStoreAll() {
-  return useZustandStore(studyStore)
+/**
+ * Preact用のフック（全ての状態を取得）
+ */
+export function useStudyStoreAll(): StudyStore {
+  return useSyncExternalStore(
+    studyStore.subscribe,
+    studyStore.getState,
+    studyStore.getState
+  )
 }
