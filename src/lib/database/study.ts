@@ -1,38 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createClient } from '@/lib/supabase/server'
 import { handleSupabaseError } from '@/lib/errors'
-
-/**
- * 資格と関連する問題集の型定義
- */
-export interface CertificationWithQuestionSets {
-  id: string
-  name: string
-  description: string | null
-  question_sets: {
-    id: string
-    name: string
-    description: string | null
-    question_count: number
-  }[]
-}
-
-/**
- * 問題と選択肢の型定義
- */
-export interface QuestionWithChoices {
-  id: string
-  question_text: string
-  explanation: string | null
-  is_multiple_choice: boolean
-  order_index: number | null
-  choices: {
-    id: string
-    choice_text: string
-    is_correct: boolean
-    order_index: number | null
-  }[]
-}
+import type {
+  CertificationWithQuestionSets,
+  QuestionWithChoices,
+} from '@birgerik/types'
 
 /**
  * すべての資格と問題集を取得

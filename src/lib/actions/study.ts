@@ -4,9 +4,12 @@ import {
   getCertificationsWithQuestionSets as dbGetCertificationsWithQuestionSets,
   getQuestionSetDetail as dbGetQuestionSetDetail,
   getQuestionsWithChoices as dbGetQuestionsWithChoices,
-  type CertificationWithQuestionSets,
-  type QuestionWithChoices,
 } from '@/lib/database/study'
+
+import type {
+  CertificationWithQuestionSets,
+  QuestionWithChoices,
+} from '@birgerik/types'
 
 // 型を再エクスポート
 export type { CertificationWithQuestionSets, QuestionWithChoices }

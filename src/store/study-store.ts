@@ -1,34 +1,16 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import type { QuestionWithChoices, UserAnswer } from '@birgerik/types'
 
 /**
- * 問題と選択肢の型
+ * 問題の型エイリアス
  */
-export interface Choice {
-  id: string
-  choice_text: string
-  is_correct: boolean
-  order_index: number | null
-}
-
-export interface Question {
-  id: string
-  question_text: string
-  explanation: string | null
-  is_multiple_choice: boolean
-  order_index: number | null
-  choices: Choice[]
-}
+export type Question = QuestionWithChoices
 
 /**
- * ユーザーの回答履歴
+ * ユーザーの回答履歴の型エイリアス
  */
-export interface AnswerHistory {
-  questionId: string
-  selectedChoiceIds: string[]
-  isCorrect: boolean
-  answeredAt: Date
-}
+export type AnswerHistory = UserAnswer
 
 /**
  * 学習セッションの状態
