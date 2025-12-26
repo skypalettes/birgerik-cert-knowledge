@@ -1,17 +1,9 @@
 import type { Metadata } from 'next'
-import { Inter, Noto_Sans_JP } from 'next/font/google'
 import './globals.css'
 import { Toaster } from 'sonner'
 
-const inter = Inter({ 
-  subsets: ['latin'],
-  variable: '--font-inter',
-})
-
-const notoSansJP = Noto_Sans_JP({ 
-  subsets: ['latin'],
-  variable: '--font-noto-sans-jp',
-})
+// Google Fontsの読み込みをスキップして、システムフォントを使用
+// ネットワーク環境によってはGoogle Fontsが取得できないため
 
 export const metadata: Metadata = {
   title: 'Birgerik - 資格取得支援アプリケーション',
@@ -25,7 +17,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja" suppressHydrationWarning>
-      <body className={`${inter.variable} ${notoSansJP.variable} font-sans antialiased`}>
+      <body className="font-sans antialiased">
         {children}
         <Toaster position="top-right" richColors />
       </body>
