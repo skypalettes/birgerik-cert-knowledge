@@ -246,7 +246,6 @@ export const studyStore = createStore<StudyStore>((set, get) => ({
 export function useStudyStore<T>(selector: (state: StudyStore) => T): T {
   return useSyncExternalStore(
     studyStore.subscribe,
-    () => selector(studyStore.getState()),
     () => selector(studyStore.getState())
   )
 }
@@ -257,7 +256,6 @@ export function useStudyStore<T>(selector: (state: StudyStore) => T): T {
 export function useStudyStoreAll(): StudyStore {
   return useSyncExternalStore(
     studyStore.subscribe,
-    studyStore.getState,
     studyStore.getState
   )
 }

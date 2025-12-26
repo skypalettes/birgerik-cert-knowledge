@@ -960,3 +960,79 @@
 .theme-light .birgerik-study-view {
   /* Obsidian変数を使用しているため追加のスタイル不要 */
 }
+
+/* ============================================
+   Markdownコンテンツのスタイリング
+   ============================================ */
+
+.birgerik-markdown-content {
+  line-height: 1.6;
+}
+
+.birgerik-markdown-content p {
+  margin: 0.5em 0;
+}
+
+.birgerik-markdown-content h1,
+.birgerik-markdown-content h2,
+.birgerik-markdown-content h3,
+.birgerik-markdown-content h4 {
+  margin: 0.8em 0 0.4em 0;
+  font-weight: 600;
+}
+
+.birgerik-markdown-content ul,
+.birgerik-markdown-content ol {
+  margin: 0.5em 0;
+  padding-left: 1.5em;
+}
+
+.birgerik-markdown-content li {
+  margin: 0.25em 0;
+}
+
+.birgerik-markdown-content code {
+  background-color: var(--background-primary-alt);
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-size: 0.9em;
+  font-family: var(--font-monospace);
+}
+
+.birgerik-markdown-content pre {
+  background-color: var(--background-primary-alt);
+  padding: 1em;
+  border-radius: 5px;
+  overflow-x: auto;
+  margin: 0.5em 0;
+}
+
+.birgerik-markdown-content pre code {
+  background-color: transparent;
+  padding: 0;
+}
+
+.birgerik-markdown-content strong {
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+.birgerik-markdown-content em {
+  font-style: italic;
+}
+
+.birgerik-markdown-content a {
+  color: var(--text-accent);
+  text-decoration: none;
+}
+
+.birgerik-markdown-content a:hover {
+  text-decoration: underline;
+}
+
+.birgerik-markdown-content blockquote {
+  border-left: 3px solid var(--text-accent);
+  padding-left: 1em;
+  margin: 0.5em 0;
+  color: var(--text-muted);
+}
