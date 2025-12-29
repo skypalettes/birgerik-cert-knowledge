@@ -1,6 +1,7 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { successResponse, errorResponse } from '@/lib/api/response'
 import { getCertificationsWithQuestionSets } from '@/lib/database/study'
+import { verifySupabaseToken } from '@/lib/api/verify-supabase-token'
 
 // Next.js Route Segment Config - 60秒キャッシュ
 export const revalidate = 60
@@ -8,10 +9,21 @@ export const revalidate = 60
 /**
  * GET /api/v1/study/certifications
  * 学習用：すべての資格と問題集を取得
- * 認証不要・CORS オープン
+ * 認証必須（Supabaseトークン）・CORS オープン
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    // トークン検証
+    const { valid, error } = await verifySupabaseToken(request)
+
+    if (!valid) {
+      const response = errorResponse(error || 'Unauthorized', 401)
+      // CORSヘッダーを追加
+      response.headers.set('Access-Control-Allow-Origin', '*')
+      response.headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS')
+      return response
+    }
+
     const result = await getCertificationsWithQuestionSets()
 
     if (result.error) {
@@ -43,7 +55,7 @@ export async function OPTIONS() {
     headers: {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     }
   })
 }

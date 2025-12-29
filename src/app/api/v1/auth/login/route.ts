@@ -37,17 +37,25 @@ export async function POST(request: NextRequest) {
       return errorResponse('メールアドレスまたはパスワードが正しくありません', 401)
     }
 
-    // JWTトークンを生成
+    // JWTトークンを生成（管理画面用）
     const token = await signToken({
       userId: data.user.id,
       email: data.user.email!,
     })
 
+    // Supabaseトークンも返す（Obsidianプラグイン用）
     return successResponse({
-      token,
+      token, // 既存の管理画面用カスタムJWT
       user: {
         id: data.user.id,
         email: data.user.email,
+      },
+      // Obsidianプラグイン用のSupabaseトークン
+      supabase: {
+        access_token: data.session!.access_token,
+        refresh_token: data.session!.refresh_token,
+        expires_in: data.session!.expires_in,
+        expires_at: data.session!.expires_at,
       },
     })
   } catch (error) {
