@@ -187,12 +187,10 @@ async function banUser(supabase: SupabaseClient<any, any, any>, email: string) {
 
   const user = await getUserByEmail(supabase, email)
 
-  // Ban user indefinitely (set banned_until to far future)
-  const bannedUntil = new Date()
-  bannedUntil.setFullYear(bannedUntil.getFullYear() + 100) // Ban for 100 years (effectively permanent)
-
+  // Ban user for a very long time (effectively permanent)
+  // Supabase accepts duration strings like '24h', '7d', '876000h'
   const { error } = await supabase.auth.admin.updateUserById(user.id, {
-    ban_duration: 'none', // Use permanent ban
+    ban_duration: '876000h', // 100 years (100 * 365 * 24 hours)
   })
 
   if (error) {
@@ -219,8 +217,9 @@ async function unbanUser(
 
   const user = await getUserByEmail(supabase, email)
 
+  // Unban user by setting ban_duration to 0
   const { error } = await supabase.auth.admin.updateUserById(user.id, {
-    ban_duration: 'none',
+    ban_duration: '0h',
   })
 
   if (error) {
