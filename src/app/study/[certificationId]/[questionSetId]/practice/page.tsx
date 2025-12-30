@@ -13,7 +13,7 @@ import { ChoiceOption } from '@/components/study/choice-option'
 import { AnswerFeedback } from '@/components/study/answer-feedback'
 import { StudyProgress } from '@/components/study/study-progress'
 import { StudyNavigation } from '@/components/study/study-navigation'
-import type { Choice } from '@birgerik/types'
+import type { Choice } from '../../../../../../packages/types/src/api'
 
 export default function PracticePage() {
   const router = useRouter()
