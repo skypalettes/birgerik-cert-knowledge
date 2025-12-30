@@ -3,6 +3,9 @@
 import { motion } from 'framer-motion'
 import { Check, X } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import rehypeHighlight from 'rehype-highlight'
 
 interface ChoiceOptionProps {
   choiceId: string
@@ -90,8 +93,14 @@ export function ChoiceOption({
             isCorrectButNotSelected && 'text-green-800',
             !showResult && 'text-gray-900'
           )}
-          dangerouslySetInnerHTML={{ __html: choiceText }}
-        />
+        >
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            rehypePlugins={[rehypeHighlight]}
+          >
+            {choiceText}
+          </ReactMarkdown>
+        </div>
         
         {/* 正解ラベル */}
         {isCorrectButNotSelected && (

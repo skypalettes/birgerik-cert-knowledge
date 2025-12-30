@@ -5,6 +5,9 @@ import { Badge } from '@/components/shared/ui/badge'
 import { Button } from '@/components/shared/ui/button'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import rehypeHighlight from 'rehype-highlight'
 
 interface PreviewQuestion {
   question_text: string
@@ -60,10 +63,14 @@ export function QuestionPreviewModal({
         {/* 問題文 */}
         <div>
           <h3 className="text-sm font-semibold text-gray-700 mb-3">問題文</h3>
-          <div
-            className="prose prose-sm max-w-none bg-blue-50 p-4 rounded-lg"
-            dangerouslySetInnerHTML={{ __html: question.question_text }}
-          />
+          <div className="prose prose-sm max-w-none bg-blue-50 p-4 rounded-lg">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              rehypePlugins={[rehypeHighlight]}
+            >
+              {question.question_text}
+            </ReactMarkdown>
+          </div>
         </div>
 
         {/* 選択肢 */}
@@ -126,10 +133,14 @@ export function QuestionPreviewModal({
         {question.explanation && question.explanation.trim() !== '' && (
           <div>
             <h3 className="text-sm font-semibold text-gray-700 mb-3">解説</h3>
-            <div
-              className="prose prose-sm max-w-none bg-yellow-50 p-4 rounded-lg border border-yellow-200"
-              dangerouslySetInnerHTML={{ __html: question.explanation }}
-            />
+            <div className="prose prose-sm max-w-none bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeHighlight]}
+              >
+                {question.explanation}
+              </ReactMarkdown>
+            </div>
           </div>
         )}
 

@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Modal, ModalFooter } from '@/components/shared/ui/modal'
 import { Button } from '@/components/shared/ui/button'
 import { Input } from '@/components/shared/ui/input'
-import { RichTextEditor } from '@/components/shared/ui/rich-text-editor'
+import { MarkdownEditor } from '@/components/shared/ui/markdown-editor'
 import { QuestionPreviewModal } from './question-preview'
 import { toast } from '@/lib/utils/toast'
 import { Plus, Trash2, CheckCircle2, GripVertical, Eye } from 'lucide-react'
@@ -415,17 +415,17 @@ export function QuestionFormModal({
               )}
             </div>
 
-            {/* 問題文（リッチテキストエディタ） */}
+            {/* 問題文（Markdownエディタ） */}
             <Controller
               name="question_text"
               control={control}
               render={({ field }) => (
-                <RichTextEditor
+                <MarkdownEditor
                   key={`${editorKey}-question`}
                   label="問題文"
                   content={field.value}
                   onChange={field.onChange}
-                  placeholder="問題文を入力してください。太字、リスト、コードブロックなどが使用できます。"
+                  placeholder="問題文を入力してください。Markdown記法が使用できます。"
                   disabled={isSubmitting}
                   error={errors.question_text?.message}
                   required
@@ -545,17 +545,17 @@ export function QuestionFormModal({
               </div>
             </div>
 
-            {/* 解説（リッチテキストエディタ） */}
+            {/* 解説（Markdownエディタ） */}
             <Controller
               name="explanation"
               control={control}
               render={({ field }) => (
-                <RichTextEditor
+                <MarkdownEditor
                   key={`${editorKey}-explanation`}
                   label="解説（任意）"
                   content={field.value}
                   onChange={field.onChange}
-                  placeholder="問題の解説を入力してください。太字、リスト、コードブロックなどが使用できます。"
+                  placeholder="問題の解説を入力してください。Markdown記法が使用できます。"
                   disabled={isSubmitting}
                   error={errors.explanation?.message}
                 />

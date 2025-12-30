@@ -1,35 +1,61 @@
-import { withAuth } from '@/lib/api/middleware'
+import { NextRequest, NextResponse } from 'next/server'
 import { successResponse, errorResponse } from '@/lib/api/response'
 import { getCertificationsWithQuestionSets } from '@/lib/database/study'
-import { unstable_cache } from 'next/cache'
+import { verifySupabaseToken } from '@/lib/api/verify-supabase-token'
 
-// キャッシュ設定（60秒）
-const getCachedCertificationsWithQuestionSets = unstable_cache(
-  async () => {
-    return await getCertificationsWithQuestionSets()
-  },
-  ['study-certifications'],
-  {
-    revalidate: 60,
-    tags: ['certifications', 'question-sets']
-  }
-)
+// Next.js Route Segment Config - 60秒キャッシュ
+export const revalidate = 60
 
 /**
  * GET /api/v1/study/certifications
  * 学習用：すべての資格と問題集を取得
+ * 認証必須（Supabaseトークン）・CORS オープン
  */
-export const GET = withAuth(async () => {
+export async function GET(request: NextRequest) {
   try {
-    const result = await getCachedCertificationsWithQuestionSets()
+    // トークン検証
+    const { valid, error } = await verifySupabaseToken(request)
+
+    if (!valid) {
+      const response = errorResponse(error || 'Unauthorized', 401)
+      // CORSヘッダーを追加
+      response.headers.set('Access-Control-Allow-Origin', '*')
+      response.headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS')
+      return response
+    }
+
+    const result = await getCertificationsWithQuestionSets()
 
     if (result.error) {
       return errorResponse(result.error, 500)
     }
 
-    return successResponse({ certifications: result.data })
+    const response = successResponse({ certifications: result.data })
+
+    // CORSヘッダーを追加（すべてのオリジンを許可）
+    response.headers.set('Access-Control-Allow-Origin', '*')
+    response.headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS')
+    // キャッシュヘッダー（60秒）
+    response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=30')
+
+    return response
   } catch (error) {
     console.error('Get certifications with question sets error:', error)
     return errorResponse('資格一覧の取得に失敗しました', 500)
   }
-})
+}
+
+/**
+ * OPTIONS /api/v1/study/certifications
+ * CORS Preflightリクエスト対応
+ */
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    }
+  })
+}

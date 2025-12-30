@@ -6,6 +6,9 @@ import { Badge } from '@/components/shared/ui/badge'
 import { Check, X, FileQuestion } from 'lucide-react'
 import { Question } from '@/store/study-store'
 import { cn } from '@/lib/utils/cn'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import rehypeHighlight from 'rehype-highlight'
 
 interface QuestionDetailModalProps {
   question: Question | null
@@ -41,10 +44,14 @@ export function QuestionDetailModal({
             <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
               <FileQuestion className="h-4 w-4 text-blue-600" />
             </div>
-            <div
-              className="flex-1 prose prose-sm max-w-none text-gray-900"
-              dangerouslySetInnerHTML={{ __html: question.question_text }}
-            />
+            <div className="flex-1 prose prose-sm max-w-none text-gray-900">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeHighlight]}
+              >
+                {question.question_text}
+              </ReactMarkdown>
+            </div>
           </div>
         </div>
 
@@ -84,8 +91,14 @@ export function QuestionDetailModal({
                     'flex-1 prose prose-sm max-w-none',
                     choice.is_correct ? 'text-green-900' : 'text-gray-700'
                   )}
-                  dangerouslySetInnerHTML={{ __html: choice.choice_text }}
-                />
+                >
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    rehypePlugins={[rehypeHighlight]}
+                  >
+                    {choice.choice_text}
+                  </ReactMarkdown>
+                </div>
 
                 {/* 正解ラベル */}
                 {choice.is_correct && (
@@ -107,10 +120,14 @@ export function QuestionDetailModal({
               </span>
               解説
             </h4>
-            <div
-              className="prose prose-sm max-w-none text-gray-700"
-              dangerouslySetInnerHTML={{ __html: question.explanation }}
-            />
+            <div className="prose prose-sm max-w-none text-gray-700">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeHighlight]}
+              >
+                {question.explanation}
+              </ReactMarkdown>
+            </div>
           </div>
         )}
       </div>

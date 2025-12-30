@@ -1,0 +1,1133 @@
+/* Birgerik Study Plugin Styles */
+
+/* ============================================
+   Obsidianテーマ変数を使用してネイティブな見た目を実現
+   ============================================ */
+
+.birgerik-study-view {
+  height: 100%;
+  overflow-y: auto;
+  padding: 20px;
+  background-color: var(--background-primary);
+  color: var(--text-normal);
+}
+
+/* ヘッダー */
+.birgerik-header {
+  margin-bottom: 30px;
+  text-align: center;
+  border-bottom: 1px solid var(--background-modifier-border);
+  padding-bottom: 20px;
+}
+
+.birgerik-title {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--text-normal);
+  margin: 0 0 10px 0;
+}
+
+.birgerik-subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* ステータス */
+.birgerik-status {
+  margin-bottom: 20px;
+  padding: 12px;
+  border-radius: 6px;
+  background-color: var(--background-secondary);
+  text-align: center;
+}
+
+.birgerik-status-text {
+  margin: 0;
+  font-size: 14px;
+}
+
+.birgerik-status-success {
+  color: var(--text-success);
+}
+
+.birgerik-status-error {
+  color: var(--text-error);
+}
+
+/* セクション */
+.birgerik-section {
+  margin-bottom: 30px;
+}
+
+.birgerik-section h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-normal);
+  margin: 0 0 15px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+/* 資格カード */
+.birgerik-cert-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.birgerik-cert-card {
+  padding: 16px;
+  border-radius: 8px;
+  background-color: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  transition: all 0.2s ease;
+}
+
+.birgerik-cert-card:hover {
+  border-color: var(--interactive-accent);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.birgerik-cert-card h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-normal);
+  margin: 0 0 8px 0;
+}
+
+.birgerik-cert-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0 0 12px 0;
+  line-height: 1.5;
+}
+
+.birgerik-cert-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+/* 問題セットリスト */
+.birgerik-set-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.birgerik-set-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.birgerik-set-item:hover {
+  background-color: var(--background-secondary-alt);
+  border-color: var(--interactive-accent);
+  cursor: pointer;
+}
+
+.birgerik-set-count {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.birgerik-clickable {
+  cursor: pointer;
+}
+
+/* エラー表示 */
+.birgerik-error {
+  padding: 16px;
+  border-radius: 8px;
+  background-color: var(--background-secondary);
+  border: 1px solid var(--text-error);
+  margin-top: 20px;
+}
+
+.birgerik-error p {
+  color: var(--text-error);
+  margin: 0 0 12px 0;
+  font-weight: 500;
+}
+
+.birgerik-error-suggestion {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.birgerik-error-suggestion p {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.birgerik-error-suggestion ul {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.birgerik-error-suggestion li {
+  margin-bottom: 4px;
+}
+
+/* レスポンシブ対応 */
+@media screen and (max-width: 768px) {
+  .birgerik-study-view {
+    padding: 16px;
+  }
+
+  .birgerik-title {
+    font-size: 24px;
+  }
+
+  .birgerik-cert-card h3 {
+    font-size: 16px;
+  }
+
+  .birgerik-set-item {
+    font-size: 13px;
+  }
+}
+
+/* ============================================
+   Phase 2: Preact コンポーネント スタイル
+   ============================================ */
+
+/* 共通: App Container */
+.birgerik-app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Loading State */
+.birgerik-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 16px;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--background-modifier-border);
+  border-top-color: var(--interactive-accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Empty State */
+.birgerik-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+/* ============================================
+   資格一覧画面
+   ============================================ */
+
+.birgerik-cert-screen {
+  height: 100%;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.cert-header {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.cert-header h2 {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: var(--text-normal);
+}
+
+.cert-header p {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.cert-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.cert-card {
+  padding: 20px;
+  border-radius: 8px;
+  background-color: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cert-card:hover {
+  border-color: var(--interactive-accent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.cert-card h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: var(--text-normal);
+}
+
+.cert-desc {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 0 0 12px 0;
+  line-height: 1.6;
+}
+
+.cert-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.cert-arrow {
+  color: var(--interactive-accent);
+  font-weight: 600;
+}
+
+/* ============================================
+   問題セット一覧画面
+   ============================================ */
+
+.birgerik-set-screen {
+  height: 100%;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.set-header {
+  margin-bottom: 24px;
+}
+
+.set-back-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 8px 0;
+  margin-bottom: 16px;
+  transition: color 0.2s;
+}
+
+.set-back-btn:hover {
+  color: var(--text-normal);
+}
+
+.set-header h2 {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: var(--text-normal);
+}
+
+.set-header p {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.set-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.set-card {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 8px;
+  background-color: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.set-card:hover {
+  border-color: var(--interactive-accent);
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.set-icon {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.set-content {
+  flex: 1;
+}
+
+.set-content h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 6px 0;
+  color: var(--text-normal);
+}
+
+.set-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0 0 8px 0;
+  line-height: 1.5;
+}
+
+.set-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.set-arrow {
+  color: var(--interactive-accent);
+  font-weight: 600;
+}
+
+/* ============================================
+   学習画面（ボトムシートデザイン）
+   ============================================ */
+
+.birgerik-study-screen {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ヘッダー */
+.study-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  background-color: var(--background-primary);
+}
+
+.study-header-title h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+  color: var(--text-normal);
+}
+
+.study-header-title p {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* プログレスバー */
+.study-progress-container {
+  padding: 12px 20px;
+  background-color: var(--background-primary);
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.study-progress-bar {
+  height: 6px;
+  background-color: var(--background-modifier-border);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.study-progress-fill {
+  height: 100%;
+  background-color: var(--interactive-accent);
+  transition: width 0.3s ease;
+}
+
+.study-progress-text {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* 問題エリア（動的サイズ、スクロール可能） */
+.study-question-area {
+  overflow-y: auto;
+  padding: 20px;
+  background-color: var(--background-primary);
+}
+
+.study-question-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.study-question-badge {
+  padding: 4px 8px;
+  background-color: var(--interactive-accent);
+  color: white;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.study-question-text {
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--text-normal);
+  margin-bottom: 16px;
+  white-space: pre-wrap;
+}
+
+/* 解説 */
+.study-explanation {
+  margin-top: 20px;
+  padding: 16px;
+  background-color: var(--background-secondary);
+  border-radius: 8px;
+  border: 1px solid var(--background-modifier-border);
+}
+
+.study-explanation-header {
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.study-result-correct {
+  color: #4caf50;
+}
+
+.study-result-incorrect {
+  color: #f44336;
+}
+
+.study-explanation-text {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-muted);
+  white-space: pre-wrap;
+}
+
+/* リサイズハンドル */
+.study-resize-handle {
+  flex: 0 0 auto;
+  height: 8px;
+  background-color: var(--background-secondary);
+  cursor: ns-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  user-select: none;
+  transition: background-color 0.2s ease;
+}
+
+.study-resize-handle:hover {
+  background-color: var(--background-modifier-border-hover);
+}
+
+.study-resize-handle.dragging {
+  background-color: var(--interactive-accent);
+}
+
+.study-resize-handle-line {
+  width: 40px;
+  height: 3px;
+  background-color: var(--text-muted);
+  border-radius: 2px;
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
+}
+
+.study-resize-handle:hover .study-resize-handle-line,
+.study-resize-handle.dragging .study-resize-handle-line {
+  opacity: 1;
+}
+
+/* ボトムシート（動的サイズ） */
+.study-bottom-sheet {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--background-secondary);
+  border-top: 1px solid var(--background-modifier-border);
+  overflow: hidden;
+}
+
+.study-sheet-header {
+  padding: 16px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-normal);
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+/* 選択肢コンテナ（スクロール可能） */
+.study-choices-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+}
+
+.study-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  margin-bottom: 12px;
+  background-color: var(--background-primary);
+  border: 2px solid var(--background-modifier-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.study-choice:hover {
+  border-color: var(--interactive-accent);
+  transform: translateX(4px);
+}
+
+.study-choice-selected {
+  border-color: var(--interactive-accent);
+  background-color: var(--background-secondary-alt);
+}
+
+.study-choice-correct {
+  border-color: #4caf50;
+  background-color: rgba(76, 175, 80, 0.1);
+}
+
+.study-choice-incorrect {
+  border-color: #f44336;
+  background-color: rgba(244, 67, 54, 0.1);
+}
+
+.study-choice-indicator {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: var(--text-muted);
+}
+
+.study-choice-selected .study-choice-indicator {
+  color: var(--interactive-accent);
+}
+
+.study-choice-correct .study-choice-indicator {
+  color: #4caf50;
+}
+
+.study-choice-incorrect .study-choice-indicator {
+  color: #f44336;
+}
+
+.study-choice-text {
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-normal);
+}
+
+/* アクションボタンエリア */
+.study-sheet-action {
+  padding: 16px 20px;
+  border-top: 1px solid var(--background-modifier-border);
+  background-color: var(--background-secondary);
+}
+
+.study-button-group {
+  display: flex;
+  gap: 12px;
+}
+
+.study-btn {
+  flex: 1;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.study-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.study-btn-primary {
+  background-color: var(--interactive-accent);
+  color: white;
+}
+
+.study-btn-primary:hover:not(:disabled) {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.study-btn-secondary {
+  background-color: var(--background-primary);
+  color: var(--text-normal);
+  border: 1px solid var(--background-modifier-border);
+}
+
+.study-btn-secondary:hover:not(:disabled) {
+  border-color: var(--interactive-accent);
+  transform: translateY(-1px);
+}
+
+/* ============================================
+   結果画面
+   ============================================ */
+
+.birgerik-result-screen {
+  height: 100%;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.result-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.result-header h2 {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: var(--text-normal);
+}
+
+.result-subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.result-summary {
+  max-width: 600px;
+  margin: 0 auto 32px;
+  padding: 24px;
+  background-color: var(--background-secondary);
+  border-radius: 12px;
+  border: 1px solid var(--background-modifier-border);
+}
+
+.result-message {
+  text-align: center;
+  font-size: 24px;
+  margin-bottom: 24px;
+}
+
+.result-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.result-stat {
+  text-align: center;
+  padding: 16px;
+  background-color: var(--background-primary);
+  border-radius: 8px;
+}
+
+.result-stat-main {
+  grid-column: 1 / -1;
+}
+
+.result-stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: var(--text-normal);
+}
+
+.result-stat-main .result-stat-value {
+  font-size: 48px;
+  color: var(--interactive-accent);
+}
+
+.result-stat-correct {
+  color: #4caf50;
+}
+
+.result-stat-incorrect {
+  color: #f44336;
+}
+
+.result-stat-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.result-duration {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+.result-progress {
+  margin-top: 16px;
+}
+
+.result-progress-bar {
+  height: 8px;
+  background-color: var(--background-modifier-border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.result-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4caf50, var(--interactive-accent));
+  transition: width 0.5s ease;
+}
+
+/* 間違えた問題セクション */
+.result-incorrect-section {
+  max-width: 800px;
+  margin: 0 auto 32px;
+}
+
+.result-incorrect-section h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+  color: var(--text-normal);
+}
+
+.result-incorrect-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.result-incorrect-item {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  background-color: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.result-incorrect-item:hover {
+  border-color: var(--interactive-accent);
+  transform: translateX(4px);
+}
+
+.result-incorrect-number {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 4px 8px;
+  background-color: var(--background-primary);
+  border-radius: 4px;
+}
+
+.result-incorrect-text {
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-normal);
+}
+
+.result-incorrect-action {
+  flex-shrink: 0;
+  font-size: 13px;
+  color: var(--interactive-accent);
+  font-weight: 600;
+}
+
+/* アクションボタン */
+.result-actions {
+  max-width: 600px;
+  margin: 0 auto;
+  display: flex;
+  gap: 12px;
+}
+
+/* ============================================
+   レスポンシブ対応
+   ============================================ */
+
+@media screen and (max-width: 768px) {
+  .birgerik-cert-screen,
+  .birgerik-set-screen,
+  .birgerik-result-screen {
+    padding: 16px;
+  }
+
+  .study-question-area {
+    padding: 16px;
+  }
+
+  .study-choices-container {
+    padding: 12px 16px;
+  }
+
+  .study-sheet-action {
+    padding: 12px 16px;
+  }
+
+  .study-button-group {
+    flex-direction: column;
+  }
+
+  .result-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .result-actions {
+    flex-direction: column;
+  }
+
+  .study-question-text {
+    font-size: 15px;
+  }
+
+  .study-choice-text {
+    font-size: 13px;
+  }
+}
+
+@media screen and (min-width: 1024px) {
+  .study-question-area,
+  .study-choices-container,
+  .study-sheet-action {
+    padding-left: 10%;
+    padding-right: 10%;
+  }
+}
+
+/* カスタムスクロールバー */
+.study-question-area::-webkit-scrollbar,
+.study-choices-container::-webkit-scrollbar,
+.birgerik-cert-screen::-webkit-scrollbar,
+.birgerik-set-screen::-webkit-scrollbar,
+.birgerik-result-screen::-webkit-scrollbar {
+  width: 8px;
+}
+
+.study-question-area::-webkit-scrollbar-track,
+.study-choices-container::-webkit-scrollbar-track,
+.birgerik-cert-screen::-webkit-scrollbar-track,
+.birgerik-set-screen::-webkit-scrollbar-track,
+.birgerik-result-screen::-webkit-scrollbar-track {
+  background: var(--background-secondary);
+}
+
+.study-question-area::-webkit-scrollbar-thumb,
+.study-choices-container::-webkit-scrollbar-thumb,
+.birgerik-cert-screen::-webkit-scrollbar-thumb,
+.birgerik-set-screen::-webkit-scrollbar-thumb,
+.birgerik-result-screen::-webkit-scrollbar-thumb {
+  background: var(--background-modifier-border);
+  border-radius: 4px;
+}
+
+.study-question-area::-webkit-scrollbar-thumb:hover,
+.study-choices-container::-webkit-scrollbar-thumb:hover,
+.birgerik-cert-screen::-webkit-scrollbar-thumb:hover,
+.birgerik-set-screen::-webkit-scrollbar-thumb:hover,
+.birgerik-result-screen::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* ダークモード対応（Obsidianテーマ変数を使用しているため自動対応） */
+.theme-dark .birgerik-study-view {
+  /* Obsidian変数を使用しているため追加のスタイル不要 */
+}
+
+.theme-light .birgerik-study-view {
+  /* Obsidian変数を使用しているため追加のスタイル不要 */
+}
+
+/* ============================================
+   Markdownコンテンツのスタイリング（コンパクト版）
+   ============================================ */
+
+.birgerik-markdown-content {
+  line-height: 1.4;
+  font-size: 14px;
+}
+
+/* 段落の余白を削減 */
+.birgerik-markdown-content p {
+  margin: 0.3em 0;
+}
+
+.birgerik-markdown-content p:first-child {
+  margin-top: 0;
+}
+
+.birgerik-markdown-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* 見出しの余白を削減 */
+.birgerik-markdown-content h1,
+.birgerik-markdown-content h2,
+.birgerik-markdown-content h3,
+.birgerik-markdown-content h4 {
+  margin: 0.5em 0 0.3em 0;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.birgerik-markdown-content h1:first-child,
+.birgerik-markdown-content h2:first-child,
+.birgerik-markdown-content h3:first-child,
+.birgerik-markdown-content h4:first-child {
+  margin-top: 0;
+}
+
+/* リストの余白を削減 */
+.birgerik-markdown-content ul,
+.birgerik-markdown-content ol {
+  margin: 0.3em 0;
+  padding-left: 1.5em;
+}
+
+.birgerik-markdown-content li {
+  margin: 0.15em 0;
+  line-height: 1.4;
+}
+
+/* インラインコードのスタイル */
+.birgerik-markdown-content code {
+  background-color: var(--background-primary-alt);
+  padding: 0.15em 0.3em;
+  border-radius: 3px;
+  font-size: 0.9em;
+  font-family: var(--font-monospace);
+}
+
+/* コードブロックのスタイル */
+.birgerik-markdown-content pre {
+  background-color: var(--background-primary-alt);
+  padding: 0.6em 0.8em;
+  border-radius: 5px;
+  overflow-x: auto;
+  margin: 0.4em 0;
+  position: relative;
+}
+
+.birgerik-markdown-content pre code {
+  background-color: transparent;
+  padding: 0;
+  font-size: 0.85em;
+  line-height: 1.4;
+}
+
+/* コードブロックのコピーボタンを非表示 */
+.birgerik-markdown-content pre .copy-code-button,
+.birgerik-markdown-content pre button {
+  display: none !important;
+}
+
+/* 強調表示 */
+.birgerik-markdown-content strong {
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+.birgerik-markdown-content em {
+  font-style: italic;
+}
+
+/* リンク */
+.birgerik-markdown-content a {
+  color: var(--text-accent);
+  text-decoration: none;
+}
+
+.birgerik-markdown-content a:hover {
+  text-decoration: underline;
+}
+
+/* 引用 */
+.birgerik-markdown-content blockquote {
+  border-left: 3px solid var(--text-accent);
+  padding-left: 0.8em;
+  margin: 0.4em 0;
+  color: var(--text-muted);
+}
+
+/* 水平線 */
+.birgerik-markdown-content hr {
+  border: none;
+  border-top: 1px solid var(--background-modifier-border);
+  margin: 0.5em 0;
+}
+
+/* テーブル */
+.birgerik-markdown-content table {
+  border-collapse: collapse;
+  margin: 0.4em 0;
+  font-size: 0.9em;
+}
+
+.birgerik-markdown-content th,
+.birgerik-markdown-content td {
+  border: 1px solid var(--background-modifier-border);
+  padding: 0.3em 0.5em;
+}
+
+.birgerik-markdown-content th {
+  background-color: var(--background-secondary);
+  font-weight: 600;
+}
+

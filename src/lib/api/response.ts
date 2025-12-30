@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
  * 成功レスポンス
  */
 export function successResponse<T>(data: T, status: number = 200): NextResponse {
-  return NextResponse.json(data, {
+  return NextResponse.json({ data }, {
     status,
     headers: {
       'Content-Type': 'application/json',

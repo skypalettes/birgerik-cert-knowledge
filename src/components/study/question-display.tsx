@@ -2,6 +2,9 @@
 
 import { Badge } from '@/components/shared/ui/badge'
 import { FileQuestion } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import rehypeHighlight from 'rehype-highlight'
 
 interface QuestionDisplayProps {
   questionNumber: number
@@ -37,10 +40,14 @@ export function QuestionDisplay({
       </div>
       
       {/* 問題文 */}
-      <div 
-        className="prose prose-sm max-w-none text-gray-900"
-        dangerouslySetInnerHTML={{ __html: questionText }}
-      />
+      <div className="prose prose-sm max-w-none text-gray-900">
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          rehypePlugins={[rehypeHighlight]}
+        >
+          {questionText}
+        </ReactMarkdown>
+      </div>
       
       {/* 注意事項 */}
       {isMultipleChoice && (
