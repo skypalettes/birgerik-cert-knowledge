@@ -4,7 +4,7 @@ import { Button } from '@/components/shared/ui/button'
 import { getCertificationsWithQuestionSets } from '@/lib/actions/study'
 import { CertificationCard } from '@/components/study/certification-card'
 import { EmptyState } from '@/components/shared/ui/empty-state'
-import type { CertificationWithQuestionSets } from '../../../packages/types/src/api'
+import type { CertificationWithQuestionSets } from '@birgerik/types'
 
 export const metadata = {
   title: '学習モード - Birgerik',

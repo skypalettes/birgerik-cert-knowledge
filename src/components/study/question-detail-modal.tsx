@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils/cn'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeHighlight from 'rehype-highlight'
-import type { Choice } from '../../../packages/types/src/api'
+import type { Choice } from '@birgerik/types'
 
 interface QuestionDetailModalProps {
   question: Question | null

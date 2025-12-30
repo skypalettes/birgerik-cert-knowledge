@@ -5,7 +5,7 @@ import { Button } from '@/components/shared/ui/button'
 import { getCertificationsWithQuestionSets } from '@/lib/actions/study'
 import { QuestionSetCard } from '@/components/study/question-set-card'
 import { EmptyState } from '@/components/shared/ui/empty-state'
-import type { QuestionSetSummary } from '../../../../packages/types/src/api'
+import type { QuestionSetSummary } from '@birgerik/types'
 
 interface Props {
   params: Promise<{ certificationId: string }>
