@@ -4,6 +4,7 @@ import { Button } from '@/components/shared/ui/button'
 import { getCertificationsWithQuestionSets } from '@/lib/actions/study'
 import { CertificationCard } from '@/components/study/certification-card'
 import { EmptyState } from '@/components/shared/ui/empty-state'
+import type { CertificationWithQuestionSets } from '@birgerik/types'
 
 export const metadata = {
   title: '学習モード - Birgerik',
@@ -53,7 +54,7 @@ export default async function StudyPage() {
       {/* 資格一覧 */}
       {!error && certifications && certifications.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {certifications.map((cert) => (
+          {certifications.map((cert: CertificationWithQuestionSets) => (
             <Link key={cert.id} href={`/study/${cert.id}`}>
               <CertificationCard
                 id={cert.id}

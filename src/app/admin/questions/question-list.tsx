@@ -90,8 +90,8 @@ export function QuestionList({
   const getCorrectChoices = (question: QuestionWithRelations): string[] => {
     if (!question.choices) return []
     return question.choices
-      .filter((c) => c.is_correct)
-      .map((c) => c.choice_text)
+      .filter((c: Choice) => c.is_correct)
+      .map((c: Choice) => c.choice_text)
   }
 
   const toggleExpand = (questionId: string) => {
@@ -118,7 +118,7 @@ export function QuestionList({
               className="text-sm border border-gray-300 rounded-md px-3 py-1.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="all">すべての問題集</option>
-              {questionSets.map((qs) => (
+              {questionSets.map((qs: QuestionSet) => (
                 <option key={qs.id} value={qs.id}>
                   {qs.certification?.name} - {qs.name}
                 </option>
@@ -162,7 +162,7 @@ export function QuestionList({
         />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {filteredQuestions.map((question) => {
+          {filteredQuestions.map((question: QuestionWithRelations) => {
             const correctChoices = getCorrectChoices(question)
             const isExpanded = expandedQuestionId === question.id
             const questionPreview = getTextPreview(question.question_text, 150)

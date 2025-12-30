@@ -87,7 +87,7 @@ export function QuestionSetList({
               className="text-sm border border-gray-300 rounded-md px-3 py-1.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="all">すべての資格</option>
-              {certifications.map((cert) => (
+              {certifications.map((cert: Certification) => (
                 <option key={cert.id} value={cert.id}>
                   {cert.name}
                 </option>
@@ -131,7 +131,7 @@ export function QuestionSetList({
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredQuestionSets.map((qs) => {
+          {filteredQuestionSets.map((qs: QuestionSetWithRelations) => {
             const questionCount = getQuestionCount(qs)
 
             return (

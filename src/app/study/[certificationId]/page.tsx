@@ -5,6 +5,7 @@ import { Button } from '@/components/shared/ui/button'
 import { getCertificationsWithQuestionSets } from '@/lib/actions/study'
 import { QuestionSetCard } from '@/components/study/question-set-card'
 import { EmptyState } from '@/components/shared/ui/empty-state'
+import type { QuestionSetSummary } from '@birgerik/types'
 
 interface Props {
   params: Promise<{ certificationId: string }>
@@ -90,7 +91,7 @@ export default async function QuestionSetsPage({ params }: Props) {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {certification.question_sets.map((set) => (
+            {certification.question_sets.map((set: QuestionSetSummary) => (
               <Link
                 key={set.id}
                 href={`/study/${certificationId}/${set.id}/mode-select`}
