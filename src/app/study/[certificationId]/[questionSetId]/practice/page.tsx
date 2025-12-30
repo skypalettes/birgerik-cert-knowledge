@@ -13,6 +13,7 @@ import { ChoiceOption } from '@/components/study/choice-option'
 import { AnswerFeedback } from '@/components/study/answer-feedback'
 import { StudyProgress } from '@/components/study/study-progress'
 import { StudyNavigation } from '@/components/study/study-navigation'
+import type { Choice } from '@birgerik/types'
 
 export default function PracticePage() {
   const router = useRouter()
@@ -233,7 +234,7 @@ export default function PracticePage() {
           
           {/* 選択肢 */}
           <div className="space-y-3">
-            {currentQuestion.choices.map((choice) => (
+            {currentQuestion.choices.map((choice: Choice) => (
               <ChoiceOption
                 key={choice.id}
                 choiceId={choice.id}
