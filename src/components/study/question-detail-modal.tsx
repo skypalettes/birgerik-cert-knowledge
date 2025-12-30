@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils/cn'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeHighlight from 'rehype-highlight'
+import type { Choice } from '../../../packages/types/src/api'
 
 interface QuestionDetailModalProps {
   question: Question | null
@@ -58,7 +59,7 @@ export function QuestionDetailModal({
         {/* 選択肢 */}
         <div className="space-y-3">
           <h4 className="font-semibold text-gray-900">選択肢と正解</h4>
-          {question.choices.map((choice) => (
+          {question.choices.map((choice: Choice) => (
             <div
               key={choice.id}
               className={cn(
