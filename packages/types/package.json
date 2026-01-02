@@ -19,6 +19,15 @@
   ],
   "author": "",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/irunadev/birgerik.git",
+    "directory": "packages/types"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "@birgerik": "https://npm.pkg.github.com"
+  },
   "devDependencies": {
     "typescript": "^5.0.0"
   }

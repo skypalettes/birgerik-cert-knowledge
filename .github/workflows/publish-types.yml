@@ -1,0 +1,41 @@
+name: Publish Types Package
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'packages/types/**'
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@birgerik'
+
+      - name: Install dependencies
+        working-directory: packages/types
+        run: npm ci || npm install
+
+      - name: Build
+        working-directory: packages/types
+        run: npm run build
+
+      - name: Publish to GitHub Package Registry
+        working-directory: packages/types
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
