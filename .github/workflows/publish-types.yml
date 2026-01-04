@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'packages/types/**'
+      - "packages/types/**"
   workflow_dispatch:
 
 jobs:
@@ -22,9 +22,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          registry-url: 'https://npm.pkg.github.com'
-          scope: '@birgerik'
+          node-version: "20"
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@irunahub"
 
       - name: Install dependencies
         working-directory: packages/types
