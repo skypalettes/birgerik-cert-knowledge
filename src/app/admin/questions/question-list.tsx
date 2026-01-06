@@ -80,6 +80,16 @@ export function QuestionList({
     setSelectedQuestion(null)
   }
 
+  // 重複を除いた資格のリストを取得（IDベースで重複除去）
+  const uniqueCertifications = Array.from(
+    new Map(
+      questionSets
+        .map(qs => qs.certification)
+        .filter((cert): cert is { id: string; name: string } => cert !== null)
+        .map(cert => [cert.id, cert])
+    ).values()
+  )
+
   // 資格選択に基づいて問題集を絞り込み
   const filteredQuestionSets = selectedCertificationId === 'all'
     ? questionSets
@@ -138,9 +148,9 @@ export function QuestionList({
               className="text-sm border border-gray-300 rounded-md px-3 py-1.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="all">すべての資格</option>
-              {Array.from(new Set(questionSets.map(qs => qs.certification).filter(Boolean))).map((cert) => (
-                <option key={cert!.id} value={cert!.id}>
-                  {cert!.name}
+              {uniqueCertifications.map((cert) => (
+                <option key={cert.id} value={cert.id}>
+                  {cert.name}
                 </option>
               ))}
             </select>

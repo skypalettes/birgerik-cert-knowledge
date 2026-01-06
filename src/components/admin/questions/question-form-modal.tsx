@@ -231,6 +231,16 @@ export function QuestionFormModal({
     })
   )
 
+  // 重複を除いた資格のリストを取得（IDベースで重複除去）
+  const uniqueCertifications = Array.from(
+    new Map(
+      questionSets
+        .map(qs => qs.certification)
+        .filter((cert): cert is { id: string; name: string } => cert !== null)
+        .map(cert => [cert.id, cert])
+    ).values()
+  )
+
   // 資格選択に基づいて問題集を絞り込み
   const filteredQuestionSets = selectedCertificationId
     ? questionSets.filter((qs) => qs.certification?.id === selectedCertificationId)
@@ -426,9 +436,9 @@ export function QuestionFormModal({
                   disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500"
               >
                 <option value="">すべての資格</option>
-                {Array.from(new Set(questionSets.map(qs => qs.certification).filter(Boolean))).map((cert) => (
-                  <option key={cert!.id} value={cert!.id}>
-                    {cert!.name}
+                {uniqueCertifications.map((cert) => (
+                  <option key={cert.id} value={cert.id}>
+                    {cert.name}
                   </option>
                 ))}
               </select>
