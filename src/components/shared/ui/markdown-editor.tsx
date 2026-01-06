@@ -62,6 +62,26 @@ const slashCommands = [
   },
 ]
 
+// HTMLエスケープ関数
+function escapeHtml(html: string): string {
+  return html
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
+// HTMLアンエスケープ関数
+function unescapeHtml(html: string): string {
+  return html
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'")
+    .replace(/&amp;/g, '&')
+}
+
 export function MarkdownEditor({
   content,
   onChange,
@@ -95,19 +115,22 @@ export function MarkdownEditor({
       }),
       CharacterCount,
     ],
-    content: content,
+    content: content ? `<p>${escapeHtml(content)}</p>` : '',
     editable: !disabled,
     onUpdate: ({ editor }) => {
       const html = editor.getHTML()
-      onChange(html)
+      // <p>タグを除去してからアンエスケープ
+      const text = html.replace(/<\/?p>/g, '').trim()
+      const unescaped = unescapeHtml(text)
+      onChange(unescaped)
 
       // スラッシュコマンドの検出
       const { state } = editor
       const { selection } = state
       const { $from } = selection
-      const text = $from.nodeBefore?.text || ''
+      const nodeText = $from.nodeBefore?.text || ''
 
-      if (text.endsWith('/')) {
+      if (nodeText.endsWith('/')) {
         const coords = editor.view.coordsAtPos($from.pos)
         setSlashMenuPosition({ top: coords.top + 20, left: coords.left })
         setShowSlashMenu(true)
@@ -165,10 +188,12 @@ export function MarkdownEditor({
   useEffect(() => {
     if (editor && content !== undefined && content !== null) {
       const currentHTML = editor.getHTML()
+      const currentText = currentHTML.replace(/<\/?p>/g, '').trim()
+      const currentUnescaped = unescapeHtml(currentText)
 
       // Only update if content has actually changed
-      if (content !== currentHTML) {
-        editor.commands.setContent(content)
+      if (content !== currentUnescaped) {
+        editor.commands.setContent(content ? `<p>${escapeHtml(content)}</p>` : '')
       }
     }
   }, [content, editor])
