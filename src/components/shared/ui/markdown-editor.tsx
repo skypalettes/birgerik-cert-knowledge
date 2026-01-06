@@ -74,12 +74,18 @@ export function MarkdownEditor({
   const [showSlashMenu, setShowSlashMenu] = useState(false)
   const [slashMenuPosition, setSlashMenuPosition] = useState({ top: 0, left: 0 })
   const [selectedCommandIndex, setSelectedCommandIndex] = useState(0)
+  const [isMounted, setIsMounted] = useState(false)
 
   // Turndown service for HTML to Markdown conversion
   const turndownService = useMemo(() => new TurndownService({
     headingStyle: 'atx',
     codeBlockStyle: 'fenced',
   }), [])
+
+  // クライアントサイドでのみBubbleMenuを表示
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   const editor = useEditor({
     immediatelyRender: false, // SSRエラーを回避
@@ -218,7 +224,7 @@ export function MarkdownEditor({
         )}
       >
         {/* バブルメニュー（Tiptap標準） */}
-        {editor && (
+        {isMounted && editor && (
           <BubbleMenu editor={editor}>
             <div className="flex items-center gap-1 bg-gray-900 text-white rounded-lg shadow-lg p-1">
               <button
