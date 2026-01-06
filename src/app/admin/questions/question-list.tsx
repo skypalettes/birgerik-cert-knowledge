@@ -130,14 +130,14 @@ export function QuestionList({
     <div className="space-y-6">
       {/* アクションバー */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center space-x-4 flex-wrap">
-          <div className="text-sm text-gray-600">
-            全 {filteredQuestions.length} 件の問題
+        <div className="flex items-center gap-3">
+          <div className="text-sm text-gray-600 whitespace-nowrap">
+            全 {filteredQuestions.length} 件
           </div>
 
           {/* 資格フィルター */}
-          <div className="flex items-center space-x-2">
-            <Filter className="h-4 w-4 text-gray-400" />
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-gray-400 flex-shrink-0" />
             <select
               value={selectedCertificationId}
               onChange={(e) => {
@@ -145,7 +145,7 @@ export function QuestionList({
                 // 資格を変更したら問題集フィルターをリセット
                 setSelectedQuestionSetId('all')
               }}
-              className="text-sm border border-gray-300 rounded-md px-3 py-1.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="text-sm border border-gray-300 rounded-md px-3 py-1.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-40"
             >
               <option value="all">すべての資格</option>
               {uniqueCertifications.map((cert) => (
@@ -157,11 +157,11 @@ export function QuestionList({
           </div>
 
           {/* 問題集フィルター */}
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-2">
             <select
               value={selectedQuestionSetId}
               onChange={(e) => setSelectedQuestionSetId(e.target.value)}
-              className="text-sm border border-gray-300 rounded-md px-3 py-1.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="text-sm border border-gray-300 rounded-md px-3 py-1.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-48"
             >
               <option value="all">すべての問題集</option>
               {filteredQuestionSets.map((qs: QuestionSet) => (
@@ -178,6 +178,7 @@ export function QuestionList({
             setSelectedQuestion(null)
             setIsFormModalOpen(true)
           }}
+          className="whitespace-nowrap"
         >
           <Plus className="h-4 w-4 mr-2" />
           問題を追加
