@@ -4,8 +4,7 @@ import { useEditor, EditorContent, Editor } from '@tiptap/react'
 import { BubbleMenu } from '@tiptap/react/menus'
 import StarterKit from '@tiptap/starter-kit'
 import CharacterCount from '@tiptap/extension-character-count'
-import { useEffect, useMemo, useState, useCallback } from 'react'
-import TurndownService from 'turndown'
+import { useEffect, useState, useCallback } from 'react'
 import { cn } from '@/lib/utils/cn'
 import {
   Bold,
@@ -76,12 +75,6 @@ export function MarkdownEditor({
   const [selectedCommandIndex, setSelectedCommandIndex] = useState(0)
   const [isMounted, setIsMounted] = useState(false)
 
-  // Turndown service for HTML to Markdown conversion
-  const turndownService = useMemo(() => new TurndownService({
-    headingStyle: 'atx',
-    codeBlockStyle: 'fenced',
-  }), [])
-
   // クライアントサイドでのみBubbleMenuを表示
   useEffect(() => {
     setIsMounted(true)
@@ -106,8 +99,7 @@ export function MarkdownEditor({
     editable: !disabled,
     onUpdate: ({ editor }) => {
       const html = editor.getHTML()
-      const markdown = turndownService.turndown(html)
-      onChange(markdown)
+      onChange(html)
 
       // スラッシュコマンドの検出
       const { state } = editor
@@ -171,16 +163,15 @@ export function MarkdownEditor({
 
   // Update editor content when prop changes
   useEffect(() => {
-    if (editor && content) {
+    if (editor && content !== undefined && content !== null) {
       const currentHTML = editor.getHTML()
-      const currentMarkdown = turndownService.turndown(currentHTML)
 
       // Only update if content has actually changed
-      if (content !== currentMarkdown) {
+      if (content !== currentHTML) {
         editor.commands.setContent(content)
       }
     }
-  }, [content, editor, turndownService])
+  }, [content, editor])
 
   // Update editor editable state
   useEffect(() => {
