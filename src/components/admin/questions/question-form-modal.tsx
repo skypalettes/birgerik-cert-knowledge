@@ -69,6 +69,8 @@ interface QuestionFormModalProps {
   onSuccess: () => void
   question?: QuestionWithRelations | null
   questionSets: QuestionSet[]
+  defaultCertificationId?: string
+  defaultQuestionSetId?: string
 }
 
 // ソート可能な選択肢アイテムコンポーネント
@@ -181,12 +183,15 @@ export function QuestionFormModal({
   onSuccess,
   question,
   questionSets,
+  defaultCertificationId,
+  defaultQuestionSetId,
 }: QuestionFormModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const isEditMode = !!question
 
   const [editorKey, setEditorKey] = useState(0)
+  const [selectedCertificationId, setSelectedCertificationId] = useState<string>('')
 
   const {
     register,
@@ -226,13 +231,30 @@ export function QuestionFormModal({
     })
   )
 
+  // 資格選択に基づいて問題集を絞り込み
+  const filteredQuestionSets = selectedCertificationId
+    ? questionSets.filter((qs) => qs.certification?.id === selectedCertificationId)
+    : questionSets
+
   useEffect(() => {
     if (isOpen) {
+      // 資格選択の初期値を設定
+      if (question?.question_set?.certification?.id) {
+        // 編集モードの場合、問題に紐づく資格を選択
+        setSelectedCertificationId(question.question_set.certification.id)
+      } else if (defaultCertificationId) {
+        // 新規作成でデフォルト資格がある場合
+        setSelectedCertificationId(defaultCertificationId)
+      } else {
+        // それ以外は空
+        setSelectedCertificationId('')
+      }
+
       reset({
-        question_set_id: question?.question_set_id || (questionSets.length > 0 ? questionSets[0].id : ''),
+        question_set_id: question?.question_set_id || defaultQuestionSetId || (questionSets.length > 0 ? questionSets[0].id : ''),
         question_text: question?.question_text || '',
         explanation: question?.explanation || '',
-        is_multiple_choice: question?.is_multiple_choice ?? true,
+        is_multiple_choice: question?.is_multiple_choice ?? false, // デフォルトを単一選択に変更
         choices:
           question?.choices
             ?.sort((a, b) => (a.order_index || 0) - (b.order_index || 0))
@@ -248,7 +270,7 @@ export function QuestionFormModal({
       // エディタをリセットするためにキーを更新
       setEditorKey((prev) => prev + 1)
     }
-  }, [isOpen, question, questionSets, reset])
+  }, [isOpen, question, questionSets, defaultCertificationId, defaultQuestionSetId, reset])
 
   useEffect(() => {
     if (isMultipleChoice === false) {
@@ -382,6 +404,36 @@ export function QuestionFormModal({
       >
         <form onSubmit={handleSubmit(onSubmit)} id="question-form">
           <div className="space-y-6">
+            {/* 資格選択 */}
+            <div className="space-y-1">
+              <label
+                htmlFor="certification_filter"
+                className="block text-sm font-medium text-gray-700"
+              >
+                資格
+              </label>
+              <select
+                id="certification_filter"
+                value={selectedCertificationId}
+                onChange={(e) => {
+                  setSelectedCertificationId(e.target.value)
+                  // 資格を変更したら問題集選択をリセット
+                  setValue('question_set_id', '')
+                }}
+                disabled={isSubmitting}
+                className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm
+                  focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500
+                  disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500"
+              >
+                <option value="">すべての資格</option>
+                {Array.from(new Set(questionSets.map(qs => qs.certification).filter(Boolean))).map((cert) => (
+                  <option key={cert!.id} value={cert!.id}>
+                    {cert!.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* 問題集選択 */}
             <div className="space-y-1">
               <label
@@ -402,7 +454,7 @@ export function QuestionFormModal({
                 `}
               >
                 <option value="">問題集を選択してください</option>
-                {questionSets.map((qs) => (
+                {filteredQuestionSets.map((qs) => (
                   <option key={qs.id} value={qs.id}>
                     {qs.certification?.name} - {qs.name}
                   </option>

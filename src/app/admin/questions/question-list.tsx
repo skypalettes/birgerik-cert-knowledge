@@ -47,6 +47,7 @@ export function QuestionList({
   questionSets,
 }: QuestionListProps) {
   const [questions] = useState(initialQuestions)
+  const [selectedCertificationId, setSelectedCertificationId] = useState<string>('all')
   const [selectedQuestionSetId, setSelectedQuestionSetId] = useState<string>('all')
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -71,6 +72,7 @@ export function QuestionList({
   const handleCloseFormModal = () => {
     setIsFormModalOpen(false)
     setSelectedQuestion(null)
+    // フィルター状態は維持（削除しない）
   }
 
   const handleCloseDeleteDialog = () => {
@@ -78,13 +80,27 @@ export function QuestionList({
     setSelectedQuestion(null)
   }
 
+  // 資格選択に基づいて問題集を絞り込み
+  const filteredQuestionSets = selectedCertificationId === 'all'
+    ? questionSets
+    : questionSets.filter((qs) => qs.certification?.id === selectedCertificationId)
+
   // フィルタリング
-  const filteredQuestions =
-    selectedQuestionSetId === 'all'
-      ? questions
-      : questions.filter(
-          (q) => q.question_set_id === selectedQuestionSetId
-        )
+  let filteredQuestions = questions
+
+  // 資格でフィルタリング
+  if (selectedCertificationId !== 'all') {
+    filteredQuestions = filteredQuestions.filter(
+      (q) => q.question_set?.certification?.id === selectedCertificationId
+    )
+  }
+
+  // 問題集でフィルタリング
+  if (selectedQuestionSetId !== 'all') {
+    filteredQuestions = filteredQuestions.filter(
+      (q) => q.question_set_id === selectedQuestionSetId
+    )
+  }
 
   // 正解の選択肢を取得
   const getCorrectChoices = (question: QuestionWithRelations): string[] => {
@@ -104,21 +120,41 @@ export function QuestionList({
     <div className="space-y-6">
       {/* アクションバー */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4 flex-wrap">
           <div className="text-sm text-gray-600">
             全 {filteredQuestions.length} 件の問題
           </div>
 
-          {/* 問題集フィルター */}
+          {/* 資格フィルター */}
           <div className="flex items-center space-x-2">
             <Filter className="h-4 w-4 text-gray-400" />
+            <select
+              value={selectedCertificationId}
+              onChange={(e) => {
+                setSelectedCertificationId(e.target.value)
+                // 資格を変更したら問題集フィルターをリセット
+                setSelectedQuestionSetId('all')
+              }}
+              className="text-sm border border-gray-300 rounded-md px-3 py-1.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="all">すべての資格</option>
+              {Array.from(new Set(questionSets.map(qs => qs.certification).filter(Boolean))).map((cert) => (
+                <option key={cert!.id} value={cert!.id}>
+                  {cert!.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* 問題集フィルター */}
+          <div className="flex items-center space-x-2">
             <select
               value={selectedQuestionSetId}
               onChange={(e) => setSelectedQuestionSetId(e.target.value)}
               className="text-sm border border-gray-300 rounded-md px-3 py-1.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="all">すべての問題集</option>
-              {questionSets.map((qs: QuestionSet) => (
+              {filteredQuestionSets.map((qs: QuestionSet) => (
                 <option key={qs.id} value={qs.id}>
                   {qs.certification?.name} - {qs.name}
                 </option>
@@ -299,6 +335,8 @@ export function QuestionList({
         onSuccess={handleRefresh}
         question={selectedQuestion}
         questionSets={questionSets}
+        defaultCertificationId={selectedCertificationId !== 'all' ? selectedCertificationId : undefined}
+        defaultQuestionSetId={selectedQuestionSetId !== 'all' ? selectedQuestionSetId : undefined}
       />
 
       {/* 削除確認ダイアログ */}

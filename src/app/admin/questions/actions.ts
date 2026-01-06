@@ -13,6 +13,7 @@ import {
   deleteQuestion as dbDeleteQuestion,
 } from '@/lib/database/questions'
 import { getQuestionSetsForSelect as dbGetQuestionSetsForSelect } from '@/lib/database/question-sets'
+import { getCertifications as dbGetCertifications } from '@/lib/database/certifications'
 
 export type ActionResult<T = void> = {
   success: boolean
@@ -150,6 +151,19 @@ export async function getQuestionSetsForSelect() {
     return await dbGetQuestionSetsForSelect()
   } catch (error) {
     console.error('Error fetching question sets:', error)
+    throw error
+  }
+}
+
+/**
+ * すべての資格を取得（ドロップダウン用）
+ */
+export async function getCertifications() {
+  try {
+    // lib/database の関数を呼び出し
+    return await dbGetCertifications()
+  } catch (error) {
+    console.error('Error fetching certifications:', error)
     throw error
   }
 }
