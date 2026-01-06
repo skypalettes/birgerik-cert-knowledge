@@ -52,18 +52,23 @@ export function formatHtmlForDisplay(
  */
 export function getTextPreview(html: string, maxLength: number = 100): string {
   if (!html) return ''
-  
+
+  // scriptタグとstyleタグを除去
+  const cleanedHtml = html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+
   // コードブロックの場合は [コード] と表示
-  if (html.includes('<pre>') || html.includes('<code>')) {
-    const codeText = stripHtml(html)
+  if (cleanedHtml.includes('<pre>') || cleanedHtml.includes('<code>')) {
+    const codeText = stripHtml(cleanedHtml)
     if (codeText.length > 20) {
       return `[コード] ${codeText.slice(0, 30)}...`
     }
   }
-  
+
   // リストの場合は項目を抜粋
-  if (html.includes('<li>')) {
-    const items = html.match(/<li[^>]*>(.*?)<\/li>/g)
+  if (cleanedHtml.includes('<li>')) {
+    const items = cleanedHtml.match(/<li[^>]*>(.*?)<\/li>/g)
     if (items && items.length > 0) {
       const firstItem = stripHtml(items[0])
       if (items.length > 1) {
@@ -72,7 +77,7 @@ export function getTextPreview(html: string, maxLength: number = 100): string {
       return `• ${firstItem}`
     }
   }
-  
+
   // 通常のテキスト
-  return formatHtmlForDisplay(html, maxLength)
+  return formatHtmlForDisplay(cleanedHtml, maxLength)
 }
