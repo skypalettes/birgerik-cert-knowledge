@@ -1,10 +1,24 @@
 'use client'
 
-import { useEditor, EditorContent } from '@tiptap/react'
+import { useEditor, EditorContent, Editor } from '@tiptap/react'
+import BubbleMenuExtension from '@tiptap/extension-bubble-menu'
 import StarterKit from '@tiptap/starter-kit'
-import { useEffect, useMemo } from 'react'
+import CharacterCount from '@tiptap/extension-character-count'
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import TurndownService from 'turndown'
 import { cn } from '@/lib/utils/cn'
+import {
+  Bold,
+  Italic,
+  Code,
+  Strikethrough,
+  Heading1,
+  Heading2,
+  Heading3,
+  List,
+  ListOrdered,
+  Code as CodeBlock,
+} from 'lucide-react'
 
 interface MarkdownEditorProps {
   content: string
@@ -15,6 +29,40 @@ interface MarkdownEditorProps {
   required?: boolean
 }
 
+// スラッシュコマンドのアイテム
+const slashCommands = [
+  {
+    title: '見出し1',
+    icon: Heading1,
+    command: (editor: Editor) => editor.chain().focus().toggleHeading({ level: 1 }).run(),
+  },
+  {
+    title: '見出し2',
+    icon: Heading2,
+    command: (editor: Editor) => editor.chain().focus().toggleHeading({ level: 2 }).run(),
+  },
+  {
+    title: '見出し3',
+    icon: Heading3,
+    command: (editor: Editor) => editor.chain().focus().toggleHeading({ level: 3 }).run(),
+  },
+  {
+    title: '箇条書きリスト',
+    icon: List,
+    command: (editor: Editor) => editor.chain().focus().toggleBulletList().run(),
+  },
+  {
+    title: '番号付きリスト',
+    icon: ListOrdered,
+    command: (editor: Editor) => editor.chain().focus().toggleOrderedList().run(),
+  },
+  {
+    title: 'コードブロック',
+    icon: CodeBlock,
+    command: (editor: Editor) => editor.chain().focus().toggleCodeBlock().run(),
+  },
+]
+
 export function MarkdownEditor({
   content,
   onChange,
@@ -23,6 +71,13 @@ export function MarkdownEditor({
   label,
   required = false,
 }: MarkdownEditorProps) {
+  const [showSlashMenu, setShowSlashMenu] = useState(false)
+  const [slashMenuPosition, setSlashMenuPosition] = useState({ top: 0, left: 0 })
+  const [selectedCommandIndex, setSelectedCommandIndex] = useState(0)
+  const [showBubbleMenu, setShowBubbleMenu] = useState(false)
+  const [bubbleMenuPosition, setBubbleMenuPosition] = useState({ top: 0, left: 0 })
+  const bubbleMenuRef = useRef<HTMLDivElement>(null)
+
   // Turndown service for HTML to Markdown conversion
   const turndownService = useMemo(() => new TurndownService({
     headingStyle: 'atx',
@@ -42,6 +97,10 @@ export function MarkdownEditor({
           },
         },
       }),
+      BubbleMenuExtension.configure({
+        element: bubbleMenuRef.current || document.createElement('div'),
+      }),
+      CharacterCount,
     ],
     content: content,
     editable: !disabled,
@@ -49,6 +108,46 @@ export function MarkdownEditor({
       const html = editor.getHTML()
       const markdown = turndownService.turndown(html)
       onChange(markdown)
+
+      // バブルメニューの検出（テキスト選択時）
+      const { state } = editor
+      const { selection } = state
+      const { from, to } = selection
+
+      if (from !== to && !selection.empty) {
+        const coords = editor.view.coordsAtPos(from)
+        setBubbleMenuPosition({ top: coords.top - 50, left: coords.left })
+        setShowBubbleMenu(true)
+      } else {
+        setShowBubbleMenu(false)
+      }
+
+      // スラッシュコマンドの検出
+      const { $from } = selection
+      const text = $from.nodeBefore?.text || ''
+
+      if (text.endsWith('/')) {
+        const coords = editor.view.coordsAtPos($from.pos)
+        setSlashMenuPosition({ top: coords.top + 20, left: coords.left })
+        setShowSlashMenu(true)
+        setSelectedCommandIndex(0)
+      } else {
+        setShowSlashMenu(false)
+      }
+    },
+    onSelectionUpdate: ({ editor }) => {
+      // 選択範囲が変わったときにバブルメニューを更新
+      const { state } = editor
+      const { selection } = state
+      const { from, to } = selection
+
+      if (from !== to && !selection.empty) {
+        const coords = editor.view.coordsAtPos(from)
+        setBubbleMenuPosition({ top: coords.top - 50, left: coords.left })
+        setShowBubbleMenu(true)
+      } else {
+        setShowBubbleMenu(false)
+      }
     },
     editorProps: {
       attributes: {
@@ -56,6 +155,41 @@ export function MarkdownEditor({
           'prose prose-sm max-w-none focus:outline-none min-h-[200px] p-3',
           disabled && 'cursor-not-allowed opacity-60'
         ),
+      },
+      handleKeyDown: (view, event) => {
+        if (showSlashMenu) {
+          if (event.key === 'ArrowDown') {
+            event.preventDefault()
+            setSelectedCommandIndex((prev) =>
+              prev < slashCommands.length - 1 ? prev + 1 : prev
+            )
+            return true
+          }
+          if (event.key === 'ArrowUp') {
+            event.preventDefault()
+            setSelectedCommandIndex((prev) => (prev > 0 ? prev - 1 : prev))
+            return true
+          }
+          if (event.key === 'Enter') {
+            event.preventDefault()
+            const command = slashCommands[selectedCommandIndex]
+            if (command && editor) {
+              // スラッシュを削除してからコマンド実行
+              editor.chain().focus().deleteRange({
+                from: editor.state.selection.from - 1,
+                to: editor.state.selection.from,
+              }).run()
+              command.command(editor)
+            }
+            setShowSlashMenu(false)
+            return true
+          }
+          if (event.key === 'Escape') {
+            setShowSlashMenu(false)
+            return true
+          }
+        }
+        return false
       },
     },
   })
@@ -80,6 +214,24 @@ export function MarkdownEditor({
     }
   }, [disabled, editor])
 
+  // スラッシュコマンドの実行
+  const executeSlashCommand = useCallback((index: number) => {
+    const command = slashCommands[index]
+    if (command && editor) {
+      // スラッシュを削除してからコマンド実行
+      editor.chain().focus().deleteRange({
+        from: editor.state.selection.from - 1,
+        to: editor.state.selection.from,
+      }).run()
+      command.command(editor)
+    }
+    setShowSlashMenu(false)
+  }, [editor])
+
+  // 文字数とワード数
+  const characterCount = editor?.storage.characterCount.characters() || 0
+  const wordCount = editor?.storage.characterCount.words() || 0
+
   return (
     <div className="space-y-1">
       {label && (
@@ -96,7 +248,94 @@ export function MarkdownEditor({
           disabled && 'bg-gray-50'
         )}
       >
+        {/* バブルメニュー */}
+        {showBubbleMenu && editor && (
+          <div
+            ref={bubbleMenuRef}
+            className="fixed z-50 flex items-center gap-1 bg-gray-900 text-white rounded-lg shadow-lg p-1"
+            style={{ top: bubbleMenuPosition.top, left: bubbleMenuPosition.left }}
+          >
+            <button
+              onClick={() => editor.chain().focus().toggleBold().run()}
+              className={cn(
+                'p-2 rounded hover:bg-gray-700 transition-colors',
+                editor.isActive('bold') && 'bg-gray-700'
+              )}
+              title="太字 (Ctrl+B)"
+            >
+              <Bold className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => editor.chain().focus().toggleItalic().run()}
+              className={cn(
+                'p-2 rounded hover:bg-gray-700 transition-colors',
+                editor.isActive('italic') && 'bg-gray-700'
+              )}
+              title="斜体 (Ctrl+I)"
+            >
+              <Italic className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => editor.chain().focus().toggleStrike().run()}
+              className={cn(
+                'p-2 rounded hover:bg-gray-700 transition-colors',
+                editor.isActive('strike') && 'bg-gray-700'
+              )}
+              title="取り消し線"
+            >
+              <Strikethrough className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => editor.chain().focus().toggleCode().run()}
+              className={cn(
+                'p-2 rounded hover:bg-gray-700 transition-colors',
+                editor.isActive('code') && 'bg-gray-700'
+              )}
+              title="インラインコード"
+            >
+              <Code className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+
         <EditorContent editor={editor} />
+
+        {/* スラッシュコマンドメニュー */}
+        {showSlashMenu && (
+          <div
+            className="fixed z-50 bg-white border border-gray-300 rounded-lg shadow-lg py-1 min-w-[200px]"
+            style={{ top: slashMenuPosition.top, left: slashMenuPosition.left }}
+          >
+            {slashCommands.map((command, index) => {
+              const Icon = command.icon
+              return (
+                <button
+                  key={index}
+                  onClick={() => executeSlashCommand(index)}
+                  className={cn(
+                    'w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-gray-100 transition-colors',
+                    index === selectedCommandIndex && 'bg-gray-100'
+                  )}
+                >
+                  <Icon className="h-4 w-4 text-gray-600" />
+                  <span>{command.title}</span>
+                </button>
+              )
+            })}
+          </div>
+        )}
+
+        {/* 文字数カウンター */}
+        {!disabled && (
+          <div className="px-3 py-2 border-t border-gray-200 bg-gray-50 text-xs text-gray-600 flex justify-between items-center">
+            <span>
+              {characterCount} 文字 / {wordCount} 単語
+            </span>
+            <span className="text-gray-400">
+              / でコマンドメニューを開く
+            </span>
+          </div>
+        )}
       </div>
 
       {error && (
@@ -190,7 +429,7 @@ export function MarkdownEditor({
           border-radius: 0.375rem;
           font-family: monospace;
           font-size: 0.875rem;
-          overflow-x: auto;
+          overflow-x-auto;
           margin: 0.5rem 0;
         }
 
