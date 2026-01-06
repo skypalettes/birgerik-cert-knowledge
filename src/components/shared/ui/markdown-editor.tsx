@@ -1,9 +1,10 @@
 'use client'
 
 import { useEditor, EditorContent, Editor } from '@tiptap/react'
+import { BubbleMenu } from '@tiptap/react/menus'
 import StarterKit from '@tiptap/starter-kit'
 import CharacterCount from '@tiptap/extension-character-count'
-import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import TurndownService from 'turndown'
 import { cn } from '@/lib/utils/cn'
 import {
@@ -73,9 +74,6 @@ export function MarkdownEditor({
   const [showSlashMenu, setShowSlashMenu] = useState(false)
   const [slashMenuPosition, setSlashMenuPosition] = useState({ top: 0, left: 0 })
   const [selectedCommandIndex, setSelectedCommandIndex] = useState(0)
-  const [showBubbleMenu, setShowBubbleMenu] = useState(false)
-  const [bubbleMenuPosition, setBubbleMenuPosition] = useState({ top: 0, left: 0 })
-  const bubbleMenuRef = useRef<HTMLDivElement>(null)
 
   // Turndown service for HTML to Markdown conversion
   const turndownService = useMemo(() => new TurndownService({
@@ -105,20 +103,9 @@ export function MarkdownEditor({
       const markdown = turndownService.turndown(html)
       onChange(markdown)
 
-      // バブルメニューの検出（テキスト選択時）
+      // スラッシュコマンドの検出
       const { state } = editor
       const { selection } = state
-      const { from, to } = selection
-
-      if (from !== to && !selection.empty) {
-        const coords = editor.view.coordsAtPos(from)
-        setBubbleMenuPosition({ top: coords.top - 50, left: coords.left })
-        setShowBubbleMenu(true)
-      } else {
-        setShowBubbleMenu(false)
-      }
-
-      // スラッシュコマンドの検出
       const { $from } = selection
       const text = $from.nodeBefore?.text || ''
 
@@ -129,20 +116,6 @@ export function MarkdownEditor({
         setSelectedCommandIndex(0)
       } else {
         setShowSlashMenu(false)
-      }
-    },
-    onSelectionUpdate: ({ editor }) => {
-      // 選択範囲が変わったときにバブルメニューを更新
-      const { state } = editor
-      const { selection } = state
-      const { from, to } = selection
-
-      if (from !== to && !selection.empty) {
-        const coords = editor.view.coordsAtPos(from)
-        setBubbleMenuPosition({ top: coords.top - 50, left: coords.left })
-        setShowBubbleMenu(true)
-      } else {
-        setShowBubbleMenu(false)
       }
     },
     editorProps: {
@@ -244,54 +217,52 @@ export function MarkdownEditor({
           disabled && 'bg-gray-50'
         )}
       >
-        {/* バブルメニュー */}
-        {showBubbleMenu && editor && (
-          <div
-            ref={bubbleMenuRef}
-            className="fixed z-50 flex items-center gap-1 bg-gray-900 text-white rounded-lg shadow-lg p-1"
-            style={{ top: bubbleMenuPosition.top, left: bubbleMenuPosition.left }}
-          >
-            <button
-              onClick={() => editor.chain().focus().toggleBold().run()}
-              className={cn(
-                'p-2 rounded hover:bg-gray-700 transition-colors',
-                editor.isActive('bold') && 'bg-gray-700'
-              )}
-              title="太字 (Ctrl+B)"
-            >
-              <Bold className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => editor.chain().focus().toggleItalic().run()}
-              className={cn(
-                'p-2 rounded hover:bg-gray-700 transition-colors',
-                editor.isActive('italic') && 'bg-gray-700'
-              )}
-              title="斜体 (Ctrl+I)"
-            >
-              <Italic className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => editor.chain().focus().toggleStrike().run()}
-              className={cn(
-                'p-2 rounded hover:bg-gray-700 transition-colors',
-                editor.isActive('strike') && 'bg-gray-700'
-              )}
-              title="取り消し線"
-            >
-              <Strikethrough className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => editor.chain().focus().toggleCode().run()}
-              className={cn(
-                'p-2 rounded hover:bg-gray-700 transition-colors',
-                editor.isActive('code') && 'bg-gray-700'
-              )}
-              title="インラインコード"
-            >
-              <Code className="h-4 w-4" />
-            </button>
-          </div>
+        {/* バブルメニュー（Tiptap標準） */}
+        {editor && (
+          <BubbleMenu editor={editor}>
+            <div className="flex items-center gap-1 bg-gray-900 text-white rounded-lg shadow-lg p-1">
+              <button
+                onClick={() => editor.chain().focus().toggleBold().run()}
+                className={cn(
+                  'p-2 rounded hover:bg-gray-700 transition-colors',
+                  editor.isActive('bold') && 'bg-gray-700'
+                )}
+                title="太字 (Ctrl+B)"
+              >
+                <Bold className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => editor.chain().focus().toggleItalic().run()}
+                className={cn(
+                  'p-2 rounded hover:bg-gray-700 transition-colors',
+                  editor.isActive('italic') && 'bg-gray-700'
+                )}
+                title="斜体 (Ctrl+I)"
+              >
+                <Italic className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => editor.chain().focus().toggleStrike().run()}
+                className={cn(
+                  'p-2 rounded hover:bg-gray-700 transition-colors',
+                  editor.isActive('strike') && 'bg-gray-700'
+                )}
+                title="取り消し線"
+              >
+                <Strikethrough className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => editor.chain().focus().toggleCode().run()}
+                className={cn(
+                  'p-2 rounded hover:bg-gray-700 transition-colors',
+                  editor.isActive('code') && 'bg-gray-700'
+                )}
+                title="インラインコード"
+              >
+                <Code className="h-4 w-4" />
+              </button>
+            </div>
+          </BubbleMenu>
         )}
 
         <EditorContent editor={editor} />
