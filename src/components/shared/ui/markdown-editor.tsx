@@ -82,6 +82,55 @@ function unescapeHtml(html: string): string {
     .replace(/&amp;/g, '&')
 }
 
+// Markdownのコードブロックを解析してHTMLに変換
+function parseContentWithCodeBlocks(content: string): string {
+  if (!content) return ''
+
+  const codeBlockRegex = /```(\w*)\n?([\s\S]*?)```/g
+  let lastIndex = 0
+  let result = ''
+
+  let match
+  while ((match = codeBlockRegex.exec(content)) !== null) {
+    // コードブロック前のテキスト
+    const beforeText = content.substring(lastIndex, match.index)
+    if (beforeText.trim()) {
+      result += `<p>${escapeHtml(beforeText).replace(/\n/g, '<br>')}</p>`
+    }
+
+    // コードブロック
+    const language = match[1] || ''
+    const code = match[2]
+    result += `<pre><code class="language-${language}">${escapeHtml(code)}</code></pre>`
+
+    lastIndex = match.index + match[0].length
+  }
+
+  // 最後のコードブロック以降のテキスト
+  const afterText = content.substring(lastIndex)
+  if (afterText.trim()) {
+    result += `<p>${escapeHtml(afterText).replace(/\n/g, '<br>')}</p>`
+  }
+
+  return result || '<p></p>'
+}
+
+// HTMLからMarkdownに逆変換
+function unparseContentWithCodeBlocks(html: string): string {
+  if (!html) return ''
+
+  // <pre><code>を```に戻す
+  let content = html.replace(/<pre><code(?:\s+class="language-(\w+)")?>([^]*?)<\/code><\/pre>/g, (_match, lang, code) => {
+    return '```' + (lang || '') + '\n' + unescapeHtml(code) + '```'
+  })
+
+  // 残りのHTMLタグを除去
+  content = content.replace(/<\/?p>/g, '')
+  content = content.replace(/<br\s*\/?>/gi, '\n')
+
+  return unescapeHtml(content.trim())
+}
+
 export function MarkdownEditor({
   content,
   onChange,
@@ -115,14 +164,12 @@ export function MarkdownEditor({
       }),
       CharacterCount,
     ],
-    content: content ? `<p>${escapeHtml(content).replace(/\n/g, '<br>')}</p>` : '',
+    content: parseContentWithCodeBlocks(content || ''),
     editable: !disabled,
     onUpdate: ({ editor }) => {
       const html = editor.getHTML()
-      // <p>タグを除去してから<br>を改行に戻してアンエスケープ
-      const text = html.replace(/<\/?p>/g, '').replace(/<br\s*\/?>/gi, '\n').trim()
-      const unescaped = unescapeHtml(text)
-      onChange(unescaped)
+      const markdown = unparseContentWithCodeBlocks(html)
+      onChange(markdown)
 
       // スラッシュコマンドの検出
       const { state } = editor
@@ -188,12 +235,11 @@ export function MarkdownEditor({
   useEffect(() => {
     if (editor && content !== undefined && content !== null) {
       const currentHTML = editor.getHTML()
-      const currentText = currentHTML.replace(/<\/?p>/g, '').replace(/<br\s*\/?>/gi, '\n').trim()
-      const currentUnescaped = unescapeHtml(currentText)
+      const currentMarkdown = unparseContentWithCodeBlocks(currentHTML)
 
       // Only update if content has actually changed
-      if (content !== currentUnescaped) {
-        editor.commands.setContent(content ? `<p>${escapeHtml(content).replace(/\n/g, '<br>')}</p>` : '')
+      if (content !== currentMarkdown) {
+        editor.commands.setContent(parseContentWithCodeBlocks(content))
       }
     }
   }, [content, editor])
