@@ -425,7 +425,6 @@ export function QuestionFormModal({
                   label="問題文"
                   content={field.value}
                   onChange={field.onChange}
-                  placeholder="問題文を入力してください。Markdown記法が使用できます。"
                   disabled={isSubmitting}
                   error={errors.question_text?.message}
                   required
@@ -555,7 +554,6 @@ export function QuestionFormModal({
                   label="解説（任意）"
                   content={field.value}
                   onChange={field.onChange}
-                  placeholder="問題の解説を入力してください。Markdown記法が使用できます。"
                   disabled={isSubmitting}
                   error={errors.explanation?.message}
                 />
