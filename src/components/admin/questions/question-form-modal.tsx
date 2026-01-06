@@ -7,7 +7,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Modal, ModalFooter } from '@/components/shared/ui/modal'
 import { Button } from '@/components/shared/ui/button'
 import { Input } from '@/components/shared/ui/input'
-import { MarkdownEditor } from '@/components/shared/ui/markdown-editor'
 import { QuestionPreviewModal } from './question-preview'
 import { toast } from '@/lib/utils/toast'
 import { Plus, Trash2, CheckCircle2, GripVertical, Eye } from 'lucide-react'
@@ -190,7 +189,6 @@ export function QuestionFormModal({
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const isEditMode = !!question
 
-  const [editorKey, setEditorKey] = useState(0)
   const [selectedCertificationId, setSelectedCertificationId] = useState<string>('')
 
   const {
@@ -277,8 +275,6 @@ export function QuestionFormModal({
             { choice_text: '', is_correct: false, order_index: 1 },
           ],
       })
-      // エディタをリセットするためにキーを更新
-      setEditorKey((prev) => prev + 1)
     }
   }, [isOpen, question, questionSets, defaultCertificationId, defaultQuestionSetId, reset])
 
@@ -477,22 +473,25 @@ export function QuestionFormModal({
               )}
             </div>
 
-            {/* 問題文（Markdownエディタ） */}
-            <Controller
-              name="question_text"
-              control={control}
-              render={({ field }) => (
-                <MarkdownEditor
-                  key={`${editorKey}-question`}
-                  label="問題文"
-                  content={field.value}
-                  onChange={field.onChange}
-                  disabled={isSubmitting}
-                  error={errors.question_text?.message}
-                  required
-                />
+            {/* 問題文 */}
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-gray-700">
+                問題文
+                <span className="text-red-500 ml-1">*</span>
+              </label>
+              <textarea
+                {...register('question_text')}
+                rows={8}
+                disabled={isSubmitting}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+                placeholder="問題文を入力してください（HTML可）"
+              />
+              {errors.question_text && (
+                <p className="text-sm text-red-600" role="alert">
+                  {errors.question_text.message}
+                </p>
               )}
-            />
+            </div>
 
             {/* 単一/複数選択 */}
             <div className="space-y-2">
@@ -606,21 +605,24 @@ export function QuestionFormModal({
               </div>
             </div>
 
-            {/* 解説（Markdownエディタ） */}
-            <Controller
-              name="explanation"
-              control={control}
-              render={({ field }) => (
-                <MarkdownEditor
-                  key={`${editorKey}-explanation`}
-                  label="解説（任意）"
-                  content={field.value}
-                  onChange={field.onChange}
-                  disabled={isSubmitting}
-                  error={errors.explanation?.message}
-                />
+            {/* 解説 */}
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-gray-700">
+                解説（任意）
+              </label>
+              <textarea
+                {...register('explanation')}
+                rows={6}
+                disabled={isSubmitting}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+                placeholder="解説を入力してください（HTML可）"
+              />
+              {errors.explanation && (
+                <p className="text-sm text-red-600" role="alert">
+                  {errors.explanation.message}
+                </p>
               )}
-            />
+            </div>
           </div>
         </form>
 
