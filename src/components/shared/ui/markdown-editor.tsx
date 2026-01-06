@@ -15,7 +15,14 @@ import { CodeNode, CodeHighlightNode } from '@lexical/code'
 import { LinkNode, AutoLinkNode } from '@lexical/link'
 import { $convertFromMarkdownString, $convertToMarkdownString, TRANSFORMERS } from '@lexical/markdown'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import { EditorState } from 'lexical'
+import {
+  EditorState,
+  COMMAND_PRIORITY_LOW,
+  KEY_ENTER_COMMAND,
+  $getSelection,
+  $isRangeSelection,
+} from 'lexical'
+import { $isCodeNode } from '@lexical/code'
 import { cn } from '@/lib/utils/cn'
 
 // Simple error boundary for Lexical
@@ -62,24 +69,55 @@ function MarkdownSyncPlugin({
   return <OnChangePlugin onChange={handleChange} ignoreSelectionChange />
 }
 
+// コードブロック自動補完プラグイン
+function CodeBlockAutoCompletePlugin() {
+  const [editor] = useLexicalComposerContext()
+
+  useEffect(() => {
+    return editor.registerCommand(
+      KEY_ENTER_COMMAND,
+      () => {
+        const selection = $getSelection()
+        if (!$isRangeSelection(selection)) {
+          return false
+        }
+
+        const anchorNode = selection.anchor.getNode()
+        const element = anchorNode.getTopLevelElement()
+
+        if (element && $isCodeNode(element)) {
+          // コードブロック内でEnterが押された場合の処理
+          // デフォルトの動作を許可
+          return false
+        }
+
+        return false
+      },
+      COMMAND_PRIORITY_LOW
+    )
+  }, [editor])
+
+  return null
+}
+
 // エディタの初期設定
 const editorConfig = {
   namespace: 'MarkdownEditor',
   theme: {
     root: 'p-3 min-h-[200px] focus:outline-none',
-    paragraph: 'mb-2',
+    paragraph: 'mb-1',
     heading: {
-      h1: 'text-3xl font-bold mb-4 mt-6',
-      h2: 'text-2xl font-bold mb-3 mt-5',
-      h3: 'text-xl font-bold mb-2 mt-4',
-      h4: 'text-lg font-bold mb-2 mt-3',
-      h5: 'text-base font-bold mb-1 mt-2',
-      h6: 'text-sm font-bold mb-1 mt-2',
+      h1: 'text-3xl font-bold mb-2 mt-3',
+      h2: 'text-2xl font-bold mb-2 mt-3',
+      h3: 'text-xl font-bold mb-1 mt-2',
+      h4: 'text-lg font-bold mb-1 mt-2',
+      h5: 'text-base font-bold mb-1 mt-1',
+      h6: 'text-sm font-bold mb-1 mt-1',
     },
     list: {
-      ul: 'list-disc list-inside mb-2 ml-4',
-      ol: 'list-decimal list-inside mb-2 ml-4',
-      listitem: 'mb-1',
+      ul: 'list-disc list-inside mb-1 ml-4',
+      ol: 'list-decimal list-inside mb-1 ml-4',
+      listitem: 'mb-0.5',
     },
     link: 'text-blue-600 underline hover:text-blue-800',
     text: {
@@ -90,7 +128,7 @@ const editorConfig = {
       code: 'bg-gray-100 px-1 py-0.5 rounded text-sm font-mono',
     },
     code: 'bg-gray-900 text-gray-100 p-3 rounded-md font-mono text-sm overflow-x-auto block my-2',
-    quote: 'border-l-4 border-gray-300 pl-4 italic my-2',
+    quote: 'border-l-4 border-gray-300 pl-4 italic my-1',
   },
   nodes: [
     HeadingNode,
@@ -110,7 +148,6 @@ const editorConfig = {
 export function MarkdownEditor({
   content,
   onChange,
-  placeholder = 'Markdownを入力...',
   disabled = false,
   error,
   label,
@@ -141,20 +178,16 @@ export function MarkdownEditor({
                   'prose prose-sm max-w-none',
                   disabled && 'cursor-not-allowed'
                 )}
-                aria-placeholder={placeholder}
-                placeholder={
-                  <div className="absolute top-2 left-3 text-gray-400 pointer-events-none">
-                    {placeholder}
-                  </div>
-                }
               />
             }
+            placeholder={null}
             ErrorBoundary={LexicalErrorBoundary}
           />
           <HistoryPlugin />
           <ListPlugin />
           <LinkPlugin />
           <MarkdownShortcutPlugin transformers={TRANSFORMERS} />
+          <CodeBlockAutoCompletePlugin />
           <MarkdownSyncPlugin content={content} onChange={onChange} />
         </LexicalComposer>
       </div>
