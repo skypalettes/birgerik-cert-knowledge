@@ -115,12 +115,12 @@ export function MarkdownEditor({
       }),
       CharacterCount,
     ],
-    content: content ? `<pre>${escapeHtml(content)}</pre>` : '',
+    content: content ? `<p>${escapeHtml(content).replace(/\n/g, '<br>')}</p>` : '',
     editable: !disabled,
     onUpdate: ({ editor }) => {
       const html = editor.getHTML()
-      // <pre>タグを除去してからアンエスケープ
-      const text = html.replace(/<\/?pre>/g, '').trim()
+      // <p>タグを除去してから<br>を改行に戻してアンエスケープ
+      const text = html.replace(/<\/?p>/g, '').replace(/<br\s*\/?>/gi, '\n').trim()
       const unescaped = unescapeHtml(text)
       onChange(unescaped)
 
@@ -188,12 +188,12 @@ export function MarkdownEditor({
   useEffect(() => {
     if (editor && content !== undefined && content !== null) {
       const currentHTML = editor.getHTML()
-      const currentText = currentHTML.replace(/<\/?pre>/g, '').trim()
+      const currentText = currentHTML.replace(/<\/?p>/g, '').replace(/<br\s*\/?>/gi, '\n').trim()
       const currentUnescaped = unescapeHtml(currentText)
 
       // Only update if content has actually changed
       if (content !== currentUnescaped) {
-        editor.commands.setContent(content ? `<pre>${escapeHtml(content)}</pre>` : '')
+        editor.commands.setContent(content ? `<p>${escapeHtml(content).replace(/\n/g, '<br>')}</p>` : '')
       }
     }
   }, [content, editor])
