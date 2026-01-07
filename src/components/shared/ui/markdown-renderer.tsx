@@ -105,7 +105,7 @@ export function MarkdownRenderer({ content, className = '' }: MarkdownRendererPr
           margin: 0.75rem 0;
           font-family: 'Courier New', Courier, monospace;
           font-size: 0.875rem;
-          line-height: 1.25;
+          line-height: 0.6rem;
         }
 
         .markdown-content :global(pre.code-block code) {
