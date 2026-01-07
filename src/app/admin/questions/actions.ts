@@ -68,10 +68,23 @@ export async function updateQuestion(
   formData: QuestionFormInput
 ): Promise<ActionResult> {
   try {
+    // バリデーション（superRefineで複数選択のチェックも実行される）
+    const result = questionFormSchema.safeParse(formData)
+
+    if (!result.success) {
+      const fieldErrors = result.error.flatten().fieldErrors
+      console.error('Validation errors:', fieldErrors)
+      return {
+        success: false,
+        error: '入力内容に誤りがあります',
+        fieldErrors: fieldErrors as Record<string, string[]>,
+      }
+    }
+
     // explanationの空文字をnullに変換
     const input = {
-      ...formData,
-      explanation: formData.explanation.trim() === '' ? null : formData.explanation,
+      ...result.data,
+      explanation: result.data.explanation.trim() === '' ? null : result.data.explanation,
     }
 
     // lib/database の関数を呼び出し

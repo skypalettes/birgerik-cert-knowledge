@@ -121,7 +121,7 @@ function unparseContentWithCodeBlocks(html: string): string {
   if (!html) return ''
 
   // 空のpタグや改行だけのpタグを除去
-  let cleanedHtml = html
+  const cleanedHtml = html
     .replace(/<p><\/p>/g, '')
     .replace(/<p>\s*<br\s*\/?>\s*<\/p>/g, '\n')
 

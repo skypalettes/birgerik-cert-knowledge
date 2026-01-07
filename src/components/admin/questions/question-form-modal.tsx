@@ -301,6 +301,14 @@ export function QuestionFormModal({
   const onSubmit = async (data: QuestionFormInput) => {
     setIsSubmitting(true)
 
+    // デバッグ: 送信データを確認
+    console.log('=== Form Submit Debug ===')
+    console.log('question_text length:', data.question_text.length)
+    console.log('question_text:', data.question_text)
+    console.log('explanation length:', data.explanation.length)
+    console.log('explanation:', data.explanation)
+    console.log('Full data:', data)
+
     try {
       const formattedData = {
         ...data,
@@ -324,6 +332,7 @@ export function QuestionFormModal({
         onSuccess()
         onClose()
       } else {
+        console.error('Server validation error:', result.error)
         toast.error(result.error || '操作に失敗しました')
       }
     } catch (error) {
