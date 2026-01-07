@@ -84,7 +84,7 @@ function unescapeHtml(html: string): string {
 
 // Markdownのコードブロックを解析してHTMLに変換
 function parseContentWithCodeBlocks(content: string): string {
-  if (!content) return ''
+  if (!content) return '<p></p>'
 
   const codeBlockRegex = /```(\w*)\n?([\s\S]*?)```/g
   let lastIndex = 0
@@ -94,7 +94,7 @@ function parseContentWithCodeBlocks(content: string): string {
   while ((match = codeBlockRegex.exec(content)) !== null) {
     // コードブロック前のテキスト
     const beforeText = content.substring(lastIndex, match.index)
-    if (beforeText.trim()) {
+    if (beforeText) {
       result += `<p>${escapeHtml(beforeText).replace(/\n/g, '<br>')}</p>`
     }
 
@@ -108,7 +108,8 @@ function parseContentWithCodeBlocks(content: string): string {
 
   // 最後のコードブロック以降のテキスト
   const afterText = content.substring(lastIndex)
-  if (afterText.trim()) {
+  if (afterText || lastIndex === 0) {
+    // コードブロックが無い場合(lastIndex === 0)、または最後にテキストがある場合
     result += `<p>${escapeHtml(afterText).replace(/\n/g, '<br>')}</p>`
   }
 
@@ -119,16 +120,49 @@ function parseContentWithCodeBlocks(content: string): string {
 function unparseContentWithCodeBlocks(html: string): string {
   if (!html) return ''
 
+  // 空のpタグや改行だけのpタグを除去
+  let cleanedHtml = html
+    .replace(/<p><\/p>/g, '')
+    .replace(/<p>\s*<br\s*\/?>\s*<\/p>/g, '\n')
+
+  let result = ''
+  let lastIndex = 0
+
   // <pre><code>を```に戻す
-  let content = html.replace(/<pre><code(?:\s+class="language-(\w+)")?>([^]*?)<\/code><\/pre>/g, (_match, lang, code) => {
-    return '```' + (lang || '') + '\n' + unescapeHtml(code) + '```'
-  })
+  const codeBlockRegex = /<pre><code(?:\s+class="language-(\w+)")?>([^]*?)<\/code><\/pre>/g
 
-  // 残りのHTMLタグを除去
-  content = content.replace(/<\/?p>/g, '')
-  content = content.replace(/<br\s*\/?>/gi, '\n')
+  let match
+  while ((match = codeBlockRegex.exec(cleanedHtml)) !== null) {
+    // コードブロック前のHTML
+    const beforeHtml = cleanedHtml.substring(lastIndex, match.index)
+    if (beforeHtml) {
+      const text = beforeHtml.replace(/<\/?p>/g, '').replace(/<br\s*\/?>/gi, '\n')
+      const unescaped = unescapeHtml(text)
+      if (unescaped) {
+        result += unescaped
+      }
+    }
 
-  return unescapeHtml(content.trim())
+    // コードブロック
+    const lang = match[1] || ''
+    const code = match[2]
+    result += '```' + lang + '\n' + unescapeHtml(code) + '```'
+
+    lastIndex = match.index + match[0].length
+  }
+
+  // 最後のコードブロック以降のHTML
+  const afterHtml = cleanedHtml.substring(lastIndex)
+  if (afterHtml) {
+    const text = afterHtml.replace(/<\/?p>/g, '').replace(/<br\s*\/?>/gi, '\n')
+    const unescaped = unescapeHtml(text)
+    if (unescaped) {
+      result += unescaped
+    }
+  }
+
+  // 先頭と末尾の空白・改行のみ削除（途中の改行は保持）
+  return result.trim()
 }
 
 export function MarkdownEditor({
