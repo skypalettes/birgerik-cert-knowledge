@@ -68,20 +68,11 @@ export async function updateQuestion(
   formData: QuestionFormInput
 ): Promise<ActionResult> {
   try {
-    console.log('=== Server updateQuestion called ===')
-    console.log('ID:', id)
-    console.log('FormData question_text length:', formData.question_text.length)
-    console.log('FormData:', JSON.stringify(formData, null, 2))
-
     // バリデーション（superRefineで複数選択のチェックも実行される）
-    console.log('Starting validation...')
     const result = questionFormSchema.safeParse(formData)
 
     if (!result.success) {
       const fieldErrors = result.error.flatten().fieldErrors
-      console.error('=== Validation Failed ===')
-      console.error('Field Errors:', JSON.stringify(fieldErrors, null, 2))
-      console.error('Zod Issues:', JSON.stringify(result.error.issues, null, 2))
       return {
         success: false,
         error: '入力内容に誤りがあります',
@@ -89,25 +80,18 @@ export async function updateQuestion(
       }
     }
 
-    console.log('Validation passed!')
-
-    console.log('Calling database update...')
     // lib/database の関数を呼び出し（questionSchemaのtransformで空文字→nullに変換される）
     const dbResult = await dbUpdateQuestion(id, result.data)
 
     if (!dbResult.success) {
-      console.error('Database update failed:', dbResult.error)
       return dbResult
     }
 
-    console.log('Update successful!')
     revalidatePath('/admin/questions')
 
     return dbResult
   } catch (error) {
-    console.error('=== Server Error in updateQuestion ===')
-    console.error('Error:', error)
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack')
+    console.error('Error updating question:', error)
     return {
       success: false,
       error: '問題の更新に失敗しました',

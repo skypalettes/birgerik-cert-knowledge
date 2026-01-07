@@ -98,9 +98,9 @@ function parseContentWithCodeBlocks(content: string): string {
       result += `<p>${escapeHtml(beforeText).replace(/\n/g, '<br>')}</p>`
     }
 
-    // コードブロック
+    // コードブロック（末尾の改行を削除）
     const language = match[1] || ''
-    const code = match[2]
+    const code = match[2].replace(/\n+$/, '') // 末尾の改行を削除
     result += `<pre><code class="language-${language}">${escapeHtml(code)}</code></pre>`
 
     lastIndex = match.index + match[0].length
@@ -110,7 +110,9 @@ function parseContentWithCodeBlocks(content: string): string {
   const afterText = content.substring(lastIndex)
   if (afterText || lastIndex === 0) {
     // コードブロックが無い場合(lastIndex === 0)、または最後にテキストがある場合
-    result += `<p>${escapeHtml(afterText).replace(/\n/g, '<br>')}</p>`
+    // 先頭の改行を削除してから処理
+    const trimmedAfterText = lastIndex > 0 ? afterText.replace(/^\n+/, '') : afterText
+    result += `<p>${escapeHtml(trimmedAfterText).replace(/\n/g, '<br>')}</p>`
   }
 
   return result || '<p></p>'
@@ -143,10 +145,10 @@ function unparseContentWithCodeBlocks(html: string): string {
       }
     }
 
-    // コードブロック
+    // コードブロック（末尾の改行を削除）
     const lang = match[1] || ''
-    const code = match[2]
-    result += '```' + lang + '\n' + unescapeHtml(code) + '```'
+    const code = match[2].replace(/\n+$/, '') // 末尾の改行を削除
+    result += '```' + lang + '\n' + unescapeHtml(code) + '\n```'
 
     lastIndex = match.index + match[0].length
   }
@@ -157,7 +159,9 @@ function unparseContentWithCodeBlocks(html: string): string {
     const text = afterHtml.replace(/<\/?p>/g, '').replace(/<br\s*\/?>/gi, '\n')
     const unescaped = unescapeHtml(text)
     if (unescaped) {
-      result += unescaped
+      // コードブロックの後のテキストの場合、先頭の改行を削除
+      const trimmedUnescaped = lastIndex > 0 ? unescaped.replace(/^\n+/, '') : unescaped
+      result += trimmedUnescaped
     }
   }
 
