@@ -42,7 +42,16 @@ function parseContentWithCodeBlocks(content: string): string {
     // コードブロック（末尾の改行を削除）
     const language = match[1] || ''
     const code = match[2].replace(/\n+$/, '') // 末尾の改行を削除
-    result += `<pre class="hljs"><code class="language-${language}">${escapeHtml(code)}</code></pre>`
+
+    // 行番号付きコードブロックを生成
+    const lines = code.split('\n')
+    const numberedLines = lines.map((line, index) => {
+      const lineNumber = index + 1
+      const escapedLine = escapeHtml(line)
+      return `<span class="code-line"><span class="line-number">${lineNumber}</span><span class="line-content">${escapedLine}</span></span>`
+    }).join('\n')
+
+    result += `<pre class="code-block"><code class="language-${language}">${numberedLines}</code></pre>`
 
     lastIndex = match.index + match[0].length
   }
@@ -87,7 +96,7 @@ export function MarkdownRenderer({ content, className = '' }: MarkdownRendererPr
           margin-bottom: 0;
         }
 
-        .markdown-content :global(pre) {
+        .markdown-content :global(pre.code-block) {
           background-color: #1f2937;
           color: #f3f4f6;
           padding: 1rem;
@@ -99,11 +108,32 @@ export function MarkdownRenderer({ content, className = '' }: MarkdownRendererPr
           line-height: 1.5;
         }
 
-        .markdown-content :global(pre code) {
+        .markdown-content :global(pre.code-block code) {
           background-color: transparent;
           padding: 0;
           color: inherit;
           font-size: inherit;
+          display: block;
+        }
+
+        .markdown-content :global(.code-line) {
+          display: flex;
+          min-height: 1.5em;
+        }
+
+        .markdown-content :global(.line-number) {
+          display: inline-block;
+          width: 2.5rem;
+          text-align: right;
+          padding-right: 1rem;
+          color: #6b7280;
+          user-select: none;
+          flex-shrink: 0;
+        }
+
+        .markdown-content :global(.line-content) {
+          flex: 1;
+          white-space: pre;
         }
 
         .markdown-content :global(code) {
