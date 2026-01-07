@@ -128,8 +128,8 @@ function unparseContentWithCodeBlocks(html: string): string {
   let result = ''
   let lastIndex = 0
 
-  // <pre><code>を```に戻す
-  const codeBlockRegex = /<pre><code(?:\s+class="language-(\w+)")?>([^]*?)<\/code><\/pre>/g
+  // <pre>と<code>を```に戻す（preタグに属性がある場合も対応）
+  const codeBlockRegex = /<pre[^>]*><code(?:\s+class="language-(\w+)")?>([^]*?)<\/code><\/pre>/g
 
   let match
   while ((match = codeBlockRegex.exec(cleanedHtml)) !== null) {
