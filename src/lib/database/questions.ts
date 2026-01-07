@@ -195,17 +195,29 @@ export async function updateQuestion(
   input: unknown
 ): Promise<DatabaseResult> {
   try {
-    const result = updateQuestionSchema.safeParse({
+    console.log('=== Database updateQuestion called ===')
+    console.log('ID:', id)
+    console.log('Input:', JSON.stringify(input, null, 2))
+
+    const dataToValidate = {
       id,
       ...(typeof input === 'object' && input !== null ? input : {}),
-    })
+    }
+    console.log('Data to validate:', JSON.stringify(dataToValidate, null, 2))
+
+    const result = updateQuestionSchema.safeParse(dataToValidate)
 
     if (!result.success) {
+      console.error('=== Database Validation Failed ===')
+      console.error('Field Errors:', JSON.stringify(result.error.flatten().fieldErrors, null, 2))
+      console.error('Zod Issues:', JSON.stringify(result.error.issues, null, 2))
       return {
         success: false,
         error: '入力内容に誤りがあります',
       }
     }
+
+    console.log('Database validation passed!')
 
     const validatedData = result.data
     const supabase = await createClient()
