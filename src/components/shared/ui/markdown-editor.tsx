@@ -4,8 +4,7 @@ import { useEditor, EditorContent, Editor } from '@tiptap/react'
 import { BubbleMenu } from '@tiptap/react/menus'
 import StarterKit from '@tiptap/starter-kit'
 import CharacterCount from '@tiptap/extension-character-count'
-import { useEffect, useMemo, useState, useCallback } from 'react'
-import TurndownService from 'turndown'
+import { useEffect, useState, useCallback } from 'react'
 import { cn } from '@/lib/utils/cn'
 import {
   Bold,
@@ -63,6 +62,113 @@ const slashCommands = [
   },
 ]
 
+// HTMLエスケープ関数
+function escapeHtml(html: string): string {
+  return html
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
+// HTMLアンエスケープ関数
+function unescapeHtml(html: string): string {
+  return html
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'")
+    .replace(/&amp;/g, '&')
+}
+
+// Markdownのコードブロックを解析してHTMLに変換
+function parseContentWithCodeBlocks(content: string): string {
+  if (!content) return '<p></p>'
+
+  const codeBlockRegex = /```(\w*)\n?([\s\S]*?)```/g
+  let lastIndex = 0
+  let result = ''
+
+  let match
+  while ((match = codeBlockRegex.exec(content)) !== null) {
+    // コードブロック前のテキスト
+    const beforeText = content.substring(lastIndex, match.index)
+    if (beforeText) {
+      result += `<p>${escapeHtml(beforeText).replace(/\n/g, '<br>')}</p>`
+    }
+
+    // コードブロック（末尾の改行を削除）
+    const language = match[1] || ''
+    const code = match[2].replace(/\n+$/, '') // 末尾の改行を削除
+    result += `<pre><code class="language-${language}">${escapeHtml(code)}</code></pre>`
+
+    lastIndex = match.index + match[0].length
+  }
+
+  // 最後のコードブロック以降のテキスト
+  const afterText = content.substring(lastIndex)
+  if (afterText || lastIndex === 0) {
+    // コードブロックが無い場合(lastIndex === 0)、または最後にテキストがある場合
+    // 先頭の改行を削除してから処理
+    const trimmedAfterText = lastIndex > 0 ? afterText.replace(/^\n+/, '') : afterText
+    result += `<p>${escapeHtml(trimmedAfterText).replace(/\n/g, '<br>')}</p>`
+  }
+
+  return result || '<p></p>'
+}
+
+// HTMLからMarkdownに逆変換
+function unparseContentWithCodeBlocks(html: string): string {
+  if (!html) return ''
+
+  // 空のpタグや改行だけのpタグを除去
+  const cleanedHtml = html
+    .replace(/<p><\/p>/g, '')
+    .replace(/<p>\s*<br\s*\/?>\s*<\/p>/g, '\n')
+
+  let result = ''
+  let lastIndex = 0
+
+  // <pre>と<code>を```に戻す（preタグに属性がある場合も対応）
+  const codeBlockRegex = /<pre[^>]*><code(?:\s+class="language-(\w+)")?>([^]*?)<\/code><\/pre>/g
+
+  let match
+  while ((match = codeBlockRegex.exec(cleanedHtml)) !== null) {
+    // コードブロック前のHTML
+    const beforeHtml = cleanedHtml.substring(lastIndex, match.index)
+    if (beforeHtml) {
+      const text = beforeHtml.replace(/<\/?p>/g, '').replace(/<br\s*\/?>/gi, '\n')
+      const unescaped = unescapeHtml(text)
+      if (unescaped) {
+        result += unescaped
+      }
+    }
+
+    // コードブロック（末尾の改行を削除）
+    const lang = match[1] || ''
+    const code = match[2].replace(/\n+$/, '') // 末尾の改行を削除
+    result += '```' + lang + '\n' + unescapeHtml(code) + '\n```'
+
+    lastIndex = match.index + match[0].length
+  }
+
+  // 最後のコードブロック以降のHTML
+  const afterHtml = cleanedHtml.substring(lastIndex)
+  if (afterHtml) {
+    const text = afterHtml.replace(/<\/?p>/g, '').replace(/<br\s*\/?>/gi, '\n')
+    const unescaped = unescapeHtml(text)
+    if (unescaped) {
+      // コードブロックの後のテキストの場合、先頭の改行を削除
+      const trimmedUnescaped = lastIndex > 0 ? unescaped.replace(/^\n+/, '') : unescaped
+      result += trimmedUnescaped
+    }
+  }
+
+  // 先頭と末尾の空白・改行のみ削除（途中の改行は保持）
+  return result.trim()
+}
+
 export function MarkdownEditor({
   content,
   onChange,
@@ -75,12 +181,6 @@ export function MarkdownEditor({
   const [slashMenuPosition, setSlashMenuPosition] = useState({ top: 0, left: 0 })
   const [selectedCommandIndex, setSelectedCommandIndex] = useState(0)
   const [isMounted, setIsMounted] = useState(false)
-
-  // Turndown service for HTML to Markdown conversion
-  const turndownService = useMemo(() => new TurndownService({
-    headingStyle: 'atx',
-    codeBlockStyle: 'fenced',
-  }), [])
 
   // クライアントサイドでのみBubbleMenuを表示
   useEffect(() => {
@@ -102,20 +202,20 @@ export function MarkdownEditor({
       }),
       CharacterCount,
     ],
-    content: content,
+    content: parseContentWithCodeBlocks(content || ''),
     editable: !disabled,
     onUpdate: ({ editor }) => {
       const html = editor.getHTML()
-      const markdown = turndownService.turndown(html)
+      const markdown = unparseContentWithCodeBlocks(html)
       onChange(markdown)
 
       // スラッシュコマンドの検出
       const { state } = editor
       const { selection } = state
       const { $from } = selection
-      const text = $from.nodeBefore?.text || ''
+      const nodeText = $from.nodeBefore?.text || ''
 
-      if (text.endsWith('/')) {
+      if (nodeText.endsWith('/')) {
         const coords = editor.view.coordsAtPos($from.pos)
         setSlashMenuPosition({ top: coords.top + 20, left: coords.left })
         setShowSlashMenu(true)
@@ -171,16 +271,16 @@ export function MarkdownEditor({
 
   // Update editor content when prop changes
   useEffect(() => {
-    if (editor && content) {
+    if (editor && content !== undefined && content !== null) {
       const currentHTML = editor.getHTML()
-      const currentMarkdown = turndownService.turndown(currentHTML)
+      const currentMarkdown = unparseContentWithCodeBlocks(currentHTML)
 
       // Only update if content has actually changed
       if (content !== currentMarkdown) {
-        editor.commands.setContent(content)
+        editor.commands.setContent(parseContentWithCodeBlocks(content))
       }
     }
-  }, [content, editor, turndownService])
+  }, [content, editor])
 
   // Update editor editable state
   useEffect(() => {

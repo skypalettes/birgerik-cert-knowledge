@@ -97,10 +97,6 @@ export default function ExamPage() {
               </Button>
             </Link>
           </div>
-
-          <div className="mt-8 text-sm text-gray-500">
-            Phase 4で実装予定
-          </div>
         </div>
       </main>
     </div>

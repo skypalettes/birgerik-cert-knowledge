@@ -52,18 +52,18 @@ export function formatHtmlForDisplay(
  */
 export function getTextPreview(html: string, maxLength: number = 100): string {
   if (!html) return ''
-  
-  // コードブロックの場合は [コード] と表示
-  if (html.includes('<pre>') || html.includes('<code>')) {
-    const codeText = stripHtml(html)
-    if (codeText.length > 20) {
-      return `[コード] ${codeText.slice(0, 30)}...`
-    }
-  }
-  
+
+  // scriptタグとstyleタグを除去
+  let cleanedHtml = html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+
+  // コードブロック（<pre>タグ）を完全に削除
+  cleanedHtml = cleanedHtml.replace(/<pre[^>]*>[\s\S]*?<\/pre>/gi, '')
+
   // リストの場合は項目を抜粋
-  if (html.includes('<li>')) {
-    const items = html.match(/<li[^>]*>(.*?)<\/li>/g)
+  if (cleanedHtml.includes('<li>')) {
+    const items = cleanedHtml.match(/<li[^>]*>(.*?)<\/li>/g)
     if (items && items.length > 0) {
       const firstItem = stripHtml(items[0])
       if (items.length > 1) {
@@ -72,7 +72,14 @@ export function getTextPreview(html: string, maxLength: number = 100): string {
       return `• ${firstItem}`
     }
   }
-  
-  // 通常のテキスト
-  return formatHtmlForDisplay(html, maxLength)
+
+  // 通常のテキスト（コードブロック削除後）
+  const textContent = formatHtmlForDisplay(cleanedHtml, maxLength)
+
+  // テキストが空の場合（コードブロックのみだった場合）
+  if (!textContent || textContent.trim() === '') {
+    return '[コードブロックのみ]'
+  }
+
+  return textContent
 }

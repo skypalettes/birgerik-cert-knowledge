@@ -13,6 +13,7 @@ import {
   deleteQuestion as dbDeleteQuestion,
 } from '@/lib/database/questions'
 import { getQuestionSetsForSelect as dbGetQuestionSetsForSelect } from '@/lib/database/question-sets'
+import { getCertifications as dbGetCertifications } from '@/lib/database/certifications'
 
 export type ActionResult<T = void> = {
   success: boolean
@@ -67,14 +68,20 @@ export async function updateQuestion(
   formData: QuestionFormInput
 ): Promise<ActionResult> {
   try {
-    // explanationの空文字をnullに変換
-    const input = {
-      ...formData,
-      explanation: formData.explanation.trim() === '' ? null : formData.explanation,
+    // バリデーション（superRefineで複数選択のチェックも実行される）
+    const result = questionFormSchema.safeParse(formData)
+
+    if (!result.success) {
+      const fieldErrors = result.error.flatten().fieldErrors
+      return {
+        success: false,
+        error: '入力内容に誤りがあります',
+        fieldErrors: fieldErrors as Record<string, string[]>,
+      }
     }
 
-    // lib/database の関数を呼び出し
-    const dbResult = await dbUpdateQuestion(id, input)
+    // lib/database の関数を呼び出し（questionSchemaのtransformで空文字→nullに変換される）
+    const dbResult = await dbUpdateQuestion(id, result.data)
 
     if (!dbResult.success) {
       return dbResult
@@ -150,6 +157,19 @@ export async function getQuestionSetsForSelect() {
     return await dbGetQuestionSetsForSelect()
   } catch (error) {
     console.error('Error fetching question sets:', error)
+    throw error
+  }
+}
+
+/**
+ * すべての資格を取得（ドロップダウン用）
+ */
+export async function getCertifications() {
+  try {
+    // lib/database の関数を呼び出し
+    return await dbGetCertifications()
+  } catch (error) {
+    console.error('Error fetching certifications:', error)
     throw error
   }
 }

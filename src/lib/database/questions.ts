@@ -195,10 +195,12 @@ export async function updateQuestion(
   input: unknown
 ): Promise<DatabaseResult> {
   try {
-    const result = updateQuestionSchema.safeParse({
+    const dataToValidate = {
       id,
       ...(typeof input === 'object' && input !== null ? input : {}),
-    })
+    }
+
+    const result = updateQuestionSchema.safeParse(dataToValidate)
 
     if (!result.success) {
       return {

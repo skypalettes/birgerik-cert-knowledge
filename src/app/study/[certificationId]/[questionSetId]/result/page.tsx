@@ -266,11 +266,6 @@ export default function ResultPage() {
             学習モードトップへ
           </Button>
         </motion.div>
-
-        {/* Phase情報 */}
-        <div className="mt-8 text-center text-sm text-gray-500">
-          Phase 3.3完了 - 結果画面実装完了！
-        </div>
       </motion.div>
 
       {/* 問題詳細モーダル */}

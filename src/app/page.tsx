@@ -89,11 +89,6 @@ export default async function Home() {
               </p>
             </div>
           </div>
-
-          {/* Phase情報 */}
-          <div className="pt-8 text-sm text-gray-500">
-            Phase 0: プロジェクト基盤構築 - Step 3完了
-          </div>
         </div>
       </div>
     </main>

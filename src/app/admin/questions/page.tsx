@@ -29,7 +29,7 @@ export default async function QuestionsPage() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">問題管理</h1>
           <p className="mt-2 text-sm text-gray-600">
-            試験問題を登録・管理します（Phase 1.3a: 単一選択問題のみ）
+            試験問題を登録・管理します
           </p>
         </div>
 
