@@ -3,9 +3,7 @@
 import { motion } from 'framer-motion'
 import { CheckCircle, XCircle, ChevronDown, ChevronUp } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
-import rehypeHighlight from 'rehype-highlight'
+import { MarkdownRenderer } from '@/components/shared/ui/markdown-renderer'
 
 interface AnswerFeedbackProps {
   isCorrect: boolean
@@ -95,12 +93,7 @@ export function AnswerFeedback({
               className="border-t border-gray-200"
             >
               <div className="px-6 py-4 prose prose-sm max-w-none text-gray-700">
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  rehypePlugins={[rehypeHighlight]}
-                >
-                  {explanation}
-                </ReactMarkdown>
+                <MarkdownRenderer content={explanation} />
               </div>
             </motion.div>
           )}

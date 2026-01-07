@@ -6,9 +6,7 @@ import { Badge } from '@/components/shared/ui/badge'
 import { Check, X, FileQuestion } from 'lucide-react'
 import { Question } from '@/store/study-store'
 import { cn } from '@/lib/utils/cn'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
-import rehypeHighlight from 'rehype-highlight'
+import { MarkdownRenderer } from '@/components/shared/ui/markdown-renderer'
 import type { Choice } from '@birgerik/types'
 
 interface QuestionDetailModalProps {
@@ -46,12 +44,7 @@ export function QuestionDetailModal({
               <FileQuestion className="h-4 w-4 text-blue-600" />
             </div>
             <div className="flex-1 prose prose-sm max-w-none text-gray-900">
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                rehypePlugins={[rehypeHighlight]}
-              >
-                {question.question_text}
-              </ReactMarkdown>
+              <MarkdownRenderer content={question.question_text} />
             </div>
           </div>
         </div>
@@ -93,12 +86,7 @@ export function QuestionDetailModal({
                     choice.is_correct ? 'text-green-900' : 'text-gray-700'
                   )}
                 >
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    rehypePlugins={[rehypeHighlight]}
-                  >
-                    {choice.choice_text}
-                  </ReactMarkdown>
+                  <MarkdownRenderer content={choice.choice_text} />
                 </div>
 
                 {/* 正解ラベル */}
@@ -122,12 +110,7 @@ export function QuestionDetailModal({
               解説
             </h4>
             <div className="prose prose-sm max-w-none text-gray-700">
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                rehypePlugins={[rehypeHighlight]}
-              >
-                {question.explanation}
-              </ReactMarkdown>
+              <MarkdownRenderer content={question.explanation} />
             </div>
           </div>
         )}
