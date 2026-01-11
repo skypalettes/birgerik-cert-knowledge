@@ -91,3 +91,68 @@ export function parseHtmlToMarkdown(html: string): string {
 
   return result.trim()
 }
+
+/**
+ * markdownlintのルールに準拠したMarkdown整形を行う
+ *
+ * 適用されるルール:
+ * - MD001: 見出しレベルの段階的増加
+ * - MD003: ATXスタイル見出し（#）に統一
+ * - MD004: リストマーカー統一（-）
+ * - MD007: リストインデント2スペース
+ * - MD009: 末尾空白削除
+ * - MD010: タブをスペースに変換
+ * - MD022: 見出し前後の空白行
+ * - MD030: リストマーカー後のスペース統一
+ *
+ * @param markdown - 整形対象のMarkdownテキスト
+ * @returns markdownlintルールに準拠した整形済みMarkdownテキスト
+ */
+export async function formatMarkdownLint(markdown: string): Promise<string> {
+  if (!markdown || markdown.trim() === '') {
+    return ''
+  }
+
+  try {
+    const { unified } = await import('unified')
+    const { default: remarkParse } = await import('remark-parse')
+    const { default: remarkGfm } = await import('remark-gfm')
+    const { default: remarkStringify } = await import('remark-stringify')
+
+    const processor = unified()
+      .use(remarkParse)
+      .use(remarkGfm)
+      .use(remarkStringify, {
+        bullet: '-', // MD004: リストマーカーを'-'に統一
+        emphasis: '_', // 強調を'_'に統一
+        fence: '`', // コードブロックを```に統一
+        fences: true, // コードブロックはfence形式を使用
+        incrementListMarker: true, // 順序付きリストの番号を増分
+        listItemIndent: 'one', // MD007: リスト項目のインデント
+        rule: '-', // 水平線を'---'に統一
+        strong: '*', // 太字を'**'に統一
+        tightDefinitions: true, // 定義リストを密にする
+      })
+
+    const file = await processor.process(markdown)
+    let formatted = String(file)
+
+    // MD009: 末尾空白を削除
+    formatted = formatted
+      .split('\n')
+      .map((line) => line.trimEnd())
+      .join('\n')
+
+    // MD010: タブをスペースに変換
+    formatted = formatted.replace(/\t/g, '  ')
+
+    // 最後に改行を1つだけにする
+    formatted = formatted.trim() + '\n'
+
+    return formatted
+  } catch (error) {
+    console.error('Markdown整形エラー:', error)
+    // エラーが発生した場合は元のテキストを返す
+    return markdown
+  }
+}

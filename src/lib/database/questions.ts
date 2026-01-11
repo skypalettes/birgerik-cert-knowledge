@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { questionFormSchema, updateQuestionSchema } from '@/lib/validations/question'
 import { handleSupabaseError } from '@/lib/errors'
+import { formatMarkdownLint } from '@/lib/utils/markdown'
 import type { Database } from '@/lib/types/database.types'
 
 // 型定義
@@ -126,18 +127,23 @@ export async function createQuestion(
     const validatedData = result.data
     const supabase = await createClient()
 
-    // explanationが空文字の場合はnullに変換
+    // markdownlintルールに準拠した整形を適用
+    const formattedQuestionText = await formatMarkdownLint(
+      validatedData.question_text
+    )
+
+    // explanationが空文字の場合はnullに変換、それ以外は整形
     const explanation =
       validatedData.explanation.trim() === ''
         ? null
-        : validatedData.explanation
+        : await formatMarkdownLint(validatedData.explanation)
 
     // 問題をデータベースに挿入
     const { data: questionData, error: questionError } = await supabase
       .from('questions')
       .insert({
         question_set_id: validatedData.question_set_id,
-        question_text: validatedData.question_text,
+        question_text: formattedQuestionText,
         explanation,
         is_multiple_choice: validatedData.is_multiple_choice,
       } as QuestionInsert)
@@ -212,13 +218,23 @@ export async function updateQuestion(
     const validatedData = result.data
     const supabase = await createClient()
 
+    // markdownlintルールに準拠した整形を適用
+    const formattedQuestionText = await formatMarkdownLint(
+      validatedData.question_text
+    )
+
+    // explanationが存在する場合は整形、nullの場合はそのまま
+    const formattedExplanation = validatedData.explanation
+      ? await formatMarkdownLint(validatedData.explanation)
+      : null
+
     // 問題を更新
     const { error: questionError } = await supabase
       .from('questions')
       .update({
         question_set_id: validatedData.question_set_id,
-        question_text: validatedData.question_text,
-        explanation: validatedData.explanation,
+        question_text: formattedQuestionText,
+        explanation: formattedExplanation,
         is_multiple_choice: validatedData.is_multiple_choice,
       } as QuestionUpdate)
       .eq('id', validatedData.id)
