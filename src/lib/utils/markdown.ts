@@ -116,8 +116,6 @@ export function parseMarkdownToHtml(content: string, withLineNumbers = false, us
 export function parseHtmlToMarkdown(html: string): string {
   if (!html) return ''
 
-  console.log('[parseHtmlToMarkdown] 入力HTML:', html)
-
   // 段落の境界を改行に変換してから、pタグを削除する
   const cleanedHtml = html
     .replace(/<p><\/p>/g, '') // 空のpタグを削除
@@ -150,8 +148,6 @@ export function parseHtmlToMarkdown(html: string): string {
     if (unescaped) result += lastIndex > 0 ? unescaped.replace(/^\n+/, '') : unescaped
   }
 
-  console.log('[parseHtmlToMarkdown] 出力Markdown:', result.trim())
-
   return result.trim()
 }
 
@@ -182,16 +178,10 @@ export async function formatMarkdownLint(content: string): Promise<string> {
     // HTMLからMarkdownへの変換処理をインポート
     const { isHtml, htmlToMarkdown } = await import('./html-to-markdown')
 
-    console.log('[formatMarkdownLint] 入力:', content)
-
     // HTMLの場合は先にMarkdownに変換
     let markdown = content
     if (isHtml(content)) {
-      console.log('[formatMarkdownLint] HTML検出、Markdownに変換します')
       markdown = htmlToMarkdown(content)
-      console.log('[formatMarkdownLint] HTML→Markdown変換後:', markdown)
-    } else {
-      console.log('[formatMarkdownLint] Markdown形式として処理')
     }
 
     // remarkに渡す前の前処理：コードブロック・リストの前に空行を確保
@@ -199,7 +189,6 @@ export async function formatMarkdownLint(content: string): Promise<string> {
     markdown = markdown.replace(/([^\n])(```)/g, '$1\n\n$2')
     // 段落直後のリスト（-、*、+、1.）の前に改行を挿入
     markdown = markdown.replace(/([^\n])\n([-*+]|\d+\.)\s/g, '$1\n\n$2 ')
-    console.log('[formatMarkdownLint] 前処理後:', markdown)
 
     // remarkでmarkdownlintルールに準拠した整形を実行
     const { unified } = await import('unified')
@@ -222,10 +211,8 @@ export async function formatMarkdownLint(content: string): Promise<string> {
         tightDefinitions: true, // 定義リストを密にする
       })
 
-    console.log('[formatMarkdownLint] remarkで処理中...')
     const file = await processor.process(markdown)
     let formatted = String(file)
-    console.log('[formatMarkdownLint] remark処理後:', formatted)
 
     // MD009: 末尾空白を削除
     formatted = formatted
@@ -238,8 +225,6 @@ export async function formatMarkdownLint(content: string): Promise<string> {
 
     // 最後に改行を1つだけにする
     formatted = formatted.trim() + '\n'
-
-    console.log('[formatMarkdownLint] 最終出力:', formatted)
 
     return formatted
   } catch (error) {
