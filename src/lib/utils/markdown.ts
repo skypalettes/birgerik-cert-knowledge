@@ -215,8 +215,6 @@ export function parseHtmlToMarkdown(html: string): string {
 /**
  * markdownlintのルールに準拠したMarkdown整形を行う
  *
- * TiptapエディタからのHTML入力も自動的にMarkdownに変換してから整形します。
- *
  * 適用されるルール:
  * - MD001: 見出しレベルの段階的増加
  * - MD003: ATXスタイル見出し（#）に統一
@@ -227,7 +225,7 @@ export function parseHtmlToMarkdown(html: string): string {
  * - MD022: 見出し前後の空白行
  * - MD030: リストマーカー後のスペース統一
  *
- * @param content - 整形対象のテキスト（MarkdownまたはHTML）
+ * @param content - 整形対象のMarkdownテキスト
  * @returns markdownlintルールに準拠した整形済みMarkdownテキスト
  */
 export async function formatMarkdownLint(content: string): Promise<string> {
@@ -236,18 +234,9 @@ export async function formatMarkdownLint(content: string): Promise<string> {
   }
 
   try {
-    // HTMLからMarkdownへの変換処理をインポート
-    const { isHtml, htmlToMarkdown } = await import('./html-to-markdown')
-
-    // HTMLの場合は先にMarkdownに変換
-    let markdown = content
-    if (isHtml(content)) {
-      markdown = htmlToMarkdown(content)
-    }
-
     // remarkに渡す前の前処理：コードブロック・リストの前に空行を確保
     // コードブロックの前に改行を挿入（段落直後の```）
-    markdown = markdown.replace(/([^\n])(```)/g, '$1\n\n$2')
+    let markdown = content.replace(/([^\n])(```)/g, '$1\n\n$2')
     // 段落直後のリスト（-、*、+、1.）の前に改行を挿入
     markdown = markdown.replace(/([^\n])\n([-*+]|\d+\.)\s/g, '$1\n\n$2 ')
 
