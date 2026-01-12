@@ -174,10 +174,16 @@ export async function formatMarkdownLint(content: string): Promise<string> {
     // HTMLからMarkdownへの変換処理をインポート
     const { isHtml, htmlToMarkdown } = await import('./html-to-markdown')
 
+    console.log('[formatMarkdownLint] 入力:', content)
+
     // HTMLの場合は先にMarkdownに変換
     let markdown = content
     if (isHtml(content)) {
+      console.log('[formatMarkdownLint] HTML検出、Markdownに変換します')
       markdown = htmlToMarkdown(content)
+      console.log('[formatMarkdownLint] HTML→Markdown変換後:', markdown)
+    } else {
+      console.log('[formatMarkdownLint] Markdown形式として処理')
     }
 
     // remarkでmarkdownlintルールに準拠した整形を実行
@@ -201,8 +207,10 @@ export async function formatMarkdownLint(content: string): Promise<string> {
         tightDefinitions: true, // 定義リストを密にする
       })
 
+    console.log('[formatMarkdownLint] remarkで処理中...')
     const file = await processor.process(markdown)
     let formatted = String(file)
+    console.log('[formatMarkdownLint] remark処理後:', formatted)
 
     // MD009: 末尾空白を削除
     formatted = formatted
@@ -215,6 +223,8 @@ export async function formatMarkdownLint(content: string): Promise<string> {
 
     // 最後に改行を1つだけにする
     formatted = formatted.trim() + '\n'
+
+    console.log('[formatMarkdownLint] 最終出力:', formatted)
 
     return formatted
   } catch (error) {
