@@ -116,7 +116,13 @@ export function parseMarkdownToHtml(content: string, withLineNumbers = false, us
 export function parseHtmlToMarkdown(html: string): string {
   if (!html) return ''
 
-  const cleanedHtml = html.replace(/<p><\/p>/g, '').replace(/<p>\s*<br\s*\/?>\s*<\/p>/g, '\n')
+  console.log('[parseHtmlToMarkdown] 入力HTML:', html)
+
+  // 段落の境界を改行に変換してから、pタグを削除する
+  const cleanedHtml = html
+    .replace(/<p><\/p>/g, '') // 空のpタグを削除
+    .replace(/<p>\s*<br\s*\/?>\s*<\/p>/g, '\n') // brだけのpタグを改行に
+    .replace(/<\/p>\s*<p[^>]*>/gi, '\n') // 段落の境界を改行に変換
   const codeBlockRegex = /<pre[^>]*><code(?:\s+class="language-(\w+)")?>([^]*?)<\/code><\/pre>/g
   let result = ''
   let lastIndex = 0
@@ -143,6 +149,8 @@ export function parseHtmlToMarkdown(html: string): string {
     const unescaped = unescapeHtml(text)
     if (unescaped) result += lastIndex > 0 ? unescaped.replace(/^\n+/, '') : unescaped
   }
+
+  console.log('[parseHtmlToMarkdown] 出力Markdown:', result.trim())
 
   return result.trim()
 }
