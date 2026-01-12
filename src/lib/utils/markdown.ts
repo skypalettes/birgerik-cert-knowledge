@@ -95,6 +95,8 @@ export function parseHtmlToMarkdown(html: string): string {
 /**
  * markdownlintのルールに準拠したMarkdown整形を行う
  *
+ * TiptapエディタからのHTML入力も自動的にMarkdownに変換してから整形します。
+ *
  * 適用されるルール:
  * - MD001: 見出しレベルの段階的増加
  * - MD003: ATXスタイル見出し（#）に統一
@@ -105,15 +107,25 @@ export function parseHtmlToMarkdown(html: string): string {
  * - MD022: 見出し前後の空白行
  * - MD030: リストマーカー後のスペース統一
  *
- * @param markdown - 整形対象のMarkdownテキスト
+ * @param content - 整形対象のテキスト（MarkdownまたはHTML）
  * @returns markdownlintルールに準拠した整形済みMarkdownテキスト
  */
-export async function formatMarkdownLint(markdown: string): Promise<string> {
-  if (!markdown || markdown.trim() === '') {
+export async function formatMarkdownLint(content: string): Promise<string> {
+  if (!content || content.trim() === '') {
     return ''
   }
 
   try {
+    // HTMLからMarkdownへの変換処理をインポート
+    const { isHtml, htmlToMarkdown } = await import('./html-to-markdown')
+
+    // HTMLの場合は先にMarkdownに変換
+    let markdown = content
+    if (isHtml(content)) {
+      markdown = htmlToMarkdown(content)
+    }
+
+    // remarkでmarkdownlintルールに準拠した整形を実行
     const { unified } = await import('unified')
     const { default: remarkParse } = await import('remark-parse')
     const { default: remarkGfm } = await import('remark-gfm')
@@ -153,6 +165,6 @@ export async function formatMarkdownLint(markdown: string): Promise<string> {
   } catch (error) {
     console.error('Markdown整形エラー:', error)
     // エラーが発生した場合は元のテキストを返す
-    return markdown
+    return content
   }
 }
