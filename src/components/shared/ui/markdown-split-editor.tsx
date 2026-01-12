@@ -82,6 +82,8 @@ export function MarkdownSplitEditor({
             }}
             previewOptions={{
               remarkPlugins: [remarkGfm, remarkBreaks],
+              rehypePlugins: [],
+              skipHtml: true, // HTMLタグをそのまま表示（解釈しない）
               rehypeRewrite: (node: any, index: number, parent: any) => {
                 // セキュリティ: 外部リンクをnoopener noreferrerで開く
                 if (
