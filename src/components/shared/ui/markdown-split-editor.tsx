@@ -13,8 +13,6 @@ import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils/cn'
 import remarkGfm from 'remark-gfm'
 import remarkBreaks from 'remark-breaks'
-import '@uiw/react-md-editor/markdown-editor.css'
-import '@uiw/react-markdown-preview/markdown.css'
 
 // MDEditorはクライアントサイドでのみ動作するため、SSRを無効化
 const MDEditor = dynamic(() => import('@uiw/react-md-editor'), { ssr: false })

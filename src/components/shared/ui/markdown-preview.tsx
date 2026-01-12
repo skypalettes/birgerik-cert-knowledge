@@ -9,10 +9,9 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import remarkGfm from 'remark-gfm'
 import remarkBreaks from 'remark-breaks'
-import '@uiw/react-markdown-preview/markdown.css'
 
 // MarkdownPreviewはクライアントサイドでのみ動作するため、SSRを無効化
 const MarkdownPreviewLib = dynamic(
@@ -32,74 +31,91 @@ export function MarkdownPreview({
   showLineNumbers = false
 }: MarkdownPreviewProps) {
   const [mounted, setMounted] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
+  // 行番号を追加する処理（レンダリング後）
+  useEffect(() => {
+    if (!showLineNumbers || !mounted || !containerRef.current) return
+
+    const codeBlocks = containerRef.current.querySelectorAll('pre code')
+    codeBlocks.forEach((codeBlock) => {
+      // 既に行番号が追加されている場合はスキップ
+      if (codeBlock.querySelector('.code-line-numbers')) return
+
+      const code = codeBlock.textContent || ''
+      const lines = code.split('\n')
+
+      // 最後の空行を削除
+      if (lines[lines.length - 1] === '') {
+        lines.pop()
+      }
+
+      // 行番号付きHTMLを作成
+      const wrapper = document.createElement('div')
+      wrapper.className = 'code-line-numbers'
+      wrapper.style.display = 'table'
+      wrapper.style.width = '100%'
+
+      lines.forEach((line, index) => {
+        const row = document.createElement('div')
+        row.style.display = 'table-row'
+
+        const lineNumber = document.createElement('span')
+        lineNumber.textContent = String(index + 1)
+        lineNumber.style.display = 'table-cell'
+        lineNumber.style.width = '2.5rem'
+        lineNumber.style.textAlign = 'right'
+        lineNumber.style.paddingRight = '1rem'
+        lineNumber.style.color = '#6b7280'
+        lineNumber.style.userSelect = 'none'
+
+        const lineContent = document.createElement('span')
+        lineContent.textContent = line || ' '
+        lineContent.style.display = 'table-cell'
+        lineContent.style.whiteSpace = 'pre'
+
+        row.appendChild(lineNumber)
+        row.appendChild(lineContent)
+        wrapper.appendChild(row)
+      })
+
+      codeBlock.textContent = ''
+      codeBlock.appendChild(wrapper)
+    })
+  }, [mounted, showLineNumbers, content])
+
   if (!mounted) {
     return <div className={className}>読み込み中...</div>
   }
 
-  // 行番号付きコードブロックのカスタムコンポーネント
-  const components = showLineNumbers
-    ? {
-        code: ({ children, className, ...props }: any) => {
-          const isInline = !className
-
-          if (isInline) {
-            return <code className={className} {...props}>{children}</code>
-          }
-
-          // childrenを文字列に変換
-          const codeContent = typeof children === 'string'
-            ? children
-            : Array.isArray(children)
-            ? children.join('')
-            : String(children)
-
-          const codeString = codeContent.replace(/\n$/, '')
-          const lines = codeString.split('\n')
-
-          return (
-            <code className={className} {...props}>
-              <div style={{ display: 'table', width: '100%' }}>
-                {lines.map((line, index) => (
-                  <div key={index} style={{ display: 'table-row' }}>
-                    <span
-                      style={{
-                        display: 'table-cell',
-                        width: '2.5rem',
-                        textAlign: 'right',
-                        paddingRight: '1rem',
-                        color: '#6b7280',
-                        userSelect: 'none',
-                      }}
-                    >
-                      {index + 1}
-                    </span>
-                    <span style={{ display: 'table-cell', whiteSpace: 'pre' }}>
-                      {line || ' '}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </code>
-          )
-        },
-      }
-    : undefined
-
   return (
-    <div className={`wmde-markdown wmde-markdown-color ${className}`} data-color-mode="light">
-      <MarkdownPreviewLib
-        source={content}
-        remarkPlugins={[remarkGfm, remarkBreaks]}
-        components={components}
-        wrapperElement={{
-          'data-color-mode': 'light',
-        }}
-      />
-    </div>
+    <>
+      <style jsx>{`
+        .markdown-preview-container :global(.wmde-markdown) {
+          font-family: inherit;
+        }
+        .markdown-preview-container :global(pre) {
+          background-color: #1f2937 !important;
+          color: #f3f4f6 !important;
+        }
+      `}</style>
+      <div
+        ref={containerRef}
+        className={`markdown-preview-container ${className}`}
+        data-color-mode="light"
+      >
+        <MarkdownPreviewLib
+          source={content}
+          remarkPlugins={[remarkGfm, remarkBreaks]}
+          wrapperElement={{
+            'data-color-mode': 'light',
+          }}
+        />
+      </div>
+    </>
   )
 }
