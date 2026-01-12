@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Modal, ModalFooter } from '@/components/shared/ui/modal'
 import { Button } from '@/components/shared/ui/button'
 import { Input } from '@/components/shared/ui/input'
-import { MarkdownEditor } from '@/components/shared/ui/markdown-editor'
+import { MarkdownSplitEditor } from '@/components/shared/ui/markdown-split-editor'
 import { QuestionPreviewModal } from './question-preview'
 import { toast } from '@/lib/utils/toast'
 import { Plus, Trash2, CheckCircle2, GripVertical, Eye } from 'lucide-react'
@@ -483,7 +483,7 @@ export function QuestionFormModal({
               name="question_text"
               control={control}
               render={({ field }) => (
-                <MarkdownEditor
+                <MarkdownSplitEditor
                   key={`${editorKey}-question`}
                   label="問題文"
                   content={field.value}
@@ -612,7 +612,7 @@ export function QuestionFormModal({
               name="explanation"
               control={control}
               render={({ field }) => (
-                <MarkdownEditor
+                <MarkdownSplitEditor
                   key={`${editorKey}-explanation`}
                   label="解説（任意）"
                   content={field.value}
