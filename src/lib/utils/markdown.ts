@@ -187,8 +187,8 @@ export async function formatMarkdownLint(content: string): Promise<string> {
     }
 
     // remarkに渡す前の前処理：コードブロック・リストの前に空行を確保
-    // 段落直後のコードブロック（```）の前に改行を挿入
-    markdown = markdown.replace(/([^\n])\n(```)/g, '$1\n\n$2')
+    // コードブロックの前に改行を挿入（段落直後の```）
+    markdown = markdown.replace(/([^\n])(```)/g, '$1\n\n$2')
     // 段落直後のリスト（-、*、+、1.）の前に改行を挿入
     markdown = markdown.replace(/([^\n])\n([-*+]|\d+\.)\s/g, '$1\n\n$2 ')
     console.log('[formatMarkdownLint] 前処理後:', markdown)
