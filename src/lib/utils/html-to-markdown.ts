@@ -23,10 +23,11 @@ export function htmlToMarkdown(html: string | null): string {
   markdown = markdown.replace(/<h6[^>]*>(.*?)<\/h6>/gi, '###### $1\n\n')
 
   // Code blocks (must be processed before inline code)
-  markdown = markdown.replace(/<pre[^>]*><code[^>]*>(.*?)<\/code><\/pre>/gis, (match, code) => {
+  markdown = markdown.replace(/<pre[^>]*><code(?:\s+class="[^"]*language-(\w+)[^"]*")?[^>]*>(.*?)<\/code><\/pre>/gis, (match, language, code) => {
     // Decode HTML entities in code
     const decodedCode = decodeHtmlEntities(code)
-    return `\`\`\`\n${decodedCode}\n\`\`\`\n\n`
+    const lang = language || ''
+    return `\n\`\`\`${lang}\n${decodedCode}\n\`\`\`\n\n`
   })
 
   // Unordered lists
