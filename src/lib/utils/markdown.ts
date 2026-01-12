@@ -205,13 +205,11 @@ export async function formatMarkdownLint(content: string): Promise<string> {
     const { unified } = await import('unified')
     const { default: remarkParse } = await import('remark-parse')
     const { default: remarkGfm } = await import('remark-gfm')
-    const { default: remarkBreaks } = await import('remark-breaks')
     const { default: remarkStringify } = await import('remark-stringify')
 
     const processor = unified()
       .use(remarkParse)
       .use(remarkGfm)
-      .use(remarkBreaks) // GitHub Flavored Markdown: 単一改行もハードブレークとして扱う
       .use(remarkStringify, {
         bullet: '-', // MD004: リストマーカーを'-'に統一
         emphasis: '_', // 強調を'_'に統一
