@@ -1,15 +1,24 @@
 /**
  * マークダウンプレビューコンポーネント
  *
- * react-markdownを使用してマークダウンを安全にHTMLにレンダリングします。
+ * @uiw/react-markdown-previewを使用してマークダウンをHTMLにレンダリングします。
+ * @uiw/react-md-editorのプレビューと完全に同じスタイルを使用します。
  * 学習モードでの問題文・解説文の表示に使用します。
  */
 
-import ReactMarkdown from 'react-markdown'
+'use client'
+
+import dynamic from 'next/dynamic'
+import { useState, useEffect } from 'react'
 import remarkGfm from 'remark-gfm'
 import remarkBreaks from 'remark-breaks'
-import rehypeSanitize from 'rehype-sanitize'
-import type { Components } from 'react-markdown'
+import '@uiw/react-markdown-preview/markdown.css'
+
+// MarkdownPreviewはクライアントサイドでのみ動作するため、SSRを無効化
+const MarkdownPreviewLib = dynamic(
+  () => import('@uiw/react-markdown-preview').then((mod) => mod.default),
+  { ssr: false }
+)
 
 interface MarkdownPreviewProps {
   content: string
@@ -22,125 +31,65 @@ export function MarkdownPreview({
   className = '',
   showLineNumbers = false
 }: MarkdownPreviewProps) {
-  // カスタムコンポーネント：マークダウン要素のスタイリング
-  const components: Partial<Components> = {
-    // 見出し
-    h1: ({ children }) => (
-      <h1 className="text-2xl font-bold mt-6 mb-4 text-foreground">{children}</h1>
-    ),
-    h2: ({ children }) => (
-      <h2 className="text-xl font-bold mt-5 mb-3 text-foreground">{children}</h2>
-    ),
-    h3: ({ children }) => (
-      <h3 className="text-lg font-bold mt-4 mb-2 text-foreground">{children}</h3>
-    ),
+  const [mounted, setMounted] = useState(false)
 
-    // 段落
-    p: ({ children }) => (
-      <p className="mb-4 text-foreground leading-relaxed">{children}</p>
-    ),
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
-    // リスト
-    ul: ({ children }) => (
-      <ul className="list-disc list-inside mb-4 space-y-2 text-foreground">{children}</ul>
-    ),
-    ol: ({ children }) => (
-      <ol className="list-decimal list-inside mb-4 space-y-2 text-foreground">{children}</ol>
-    ),
-    li: ({ children }) => (
-      <li className="text-foreground">{children}</li>
-    ),
-
-    // コードブロック
-    code: ({ inline, className, children, ...props }) => {
-      if (inline) {
-        return (
-          <code
-            className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono text-foreground"
-            {...props}
-          >
-            {children}
-          </code>
-        )
-      }
-
-      // ブロックコード
-      const codeString = String(children).replace(/\n$/, '')
-      const lines = codeString.split('\n')
-
-      if (showLineNumbers) {
-        // 行番号付きコードブロック
-        return (
-          <code
-            className={`block bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm font-mono ${className || ''}`}
-            {...props}
-          >
-            {lines.map((line, index) => (
-              <div key={index} className="flex">
-                <span className="inline-block w-10 text-right pr-4 text-gray-500 select-none flex-shrink-0">
-                  {index + 1}
-                </span>
-                <span className="flex-1 whitespace-pre">{line || '\n'}</span>
-              </div>
-            ))}
-          </code>
-        )
-      }
-
-      // 行番号なしコードブロック
-      return (
-        <code
-          className={`block bg-muted p-4 rounded-lg overflow-x-auto text-sm font-mono text-foreground ${className || ''}`}
-          {...props}
-        >
-          {children}
-        </code>
-      )
-    },
-    pre: ({ children }) => (
-      <pre className="mb-4">{children}</pre>
-    ),
-
-    // 引用
-    blockquote: ({ children }) => (
-      <blockquote className="border-l-4 border-primary pl-4 py-2 mb-4 italic text-muted-foreground">
-        {children}
-      </blockquote>
-    ),
-
-    // 水平線
-    hr: () => <hr className="my-6 border-border" />,
-
-    // リンク
-    a: ({ children, href }) => (
-      <a
-        href={href}
-        className="text-primary hover:underline"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        {children}
-      </a>
-    ),
-
-    // 強調
-    strong: ({ children }) => (
-      <strong className="font-bold text-foreground">{children}</strong>
-    ),
-    em: ({ children }) => (
-      <em className="italic text-foreground">{children}</em>
-    ),
+  if (!mounted) {
+    return <div className={className}>読み込み中...</div>
   }
 
+  // 行番号付きコードブロックのカスタムコンポーネント
+  const components = showLineNumbers
+    ? {
+        code: ({ children, className, ...props }: any) => {
+          const isInline = !className
+
+          if (isInline) {
+            return <code className={className} {...props}>{children}</code>
+          }
+
+          const codeString = String(children).replace(/\n$/, '')
+          const lines = codeString.split('\n')
+
+          return (
+            <code className={className} {...props}>
+              {lines.map((line, index) => (
+                <div key={index} style={{ display: 'flex' }}>
+                  <span
+                    style={{
+                      display: 'inline-block',
+                      width: '2.5rem',
+                      textAlign: 'right',
+                      paddingRight: '1rem',
+                      color: '#6b7280',
+                      userSelect: 'none',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {index + 1}
+                  </span>
+                  <span style={{ flex: 1, whiteSpace: 'pre' }}>{line || '\n'}</span>
+                </div>
+              ))}
+            </code>
+          )
+        },
+      }
+    : undefined
+
   return (
-    <div className={`markdown-preview ${className}`}>
-      <ReactMarkdown
+    <div className={className} data-color-mode="light">
+      <MarkdownPreviewLib
+        source={content}
         remarkPlugins={[remarkGfm, remarkBreaks]}
-        rehypePlugins={[rehypeSanitize]}
         components={components}
-      >
-        {content}
-      </ReactMarkdown>
+        wrapperElement={{
+          'data-color-mode': 'light',
+        }}
+      />
     </div>
   )
 }
