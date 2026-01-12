@@ -6,7 +6,6 @@ import { cn } from '@/lib/utils/cn'
 import { MarkdownRenderer } from '@/components/shared/ui/markdown-renderer'
 
 interface ChoiceOptionProps {
-  choiceId: string
   choiceText: string
   isSelected: boolean
   isCorrect?: boolean
@@ -16,7 +15,6 @@ interface ChoiceOptionProps {
 }
 
 export function ChoiceOption({
-  choiceId,
   choiceText,
   isSelected,
   isCorrect,

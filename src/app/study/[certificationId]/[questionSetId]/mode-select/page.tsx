@@ -43,7 +43,7 @@ export default function ModeSelectPage() {
         }
 
         setQuestionSet(result.data)
-      } catch (err) {
+      } catch (_err) {
         setError('データの取得中にエラーが発生しました')
       } finally {
         setIsLoading(false)

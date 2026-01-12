@@ -84,14 +84,19 @@ export function MarkdownSplitEditor({
               remarkPlugins: [remarkGfm, remarkBreaks],
               rehypePlugins: [],
               skipHtml: true, // HTMLタグをそのまま表示（解釈しない）
-              rehypeRewrite: (node: any, index: number, parent: any) => {
+              rehypeRewrite: (node: unknown, index: number, parent: unknown) => {
                 // セキュリティ: 外部リンクをnoopener noreferrerで開く
+                const nodeEl = node as { tagName?: string }
+                const parentEl = parent as { tagName?: string; children?: unknown[] }
                 if (
-                  node.tagName === 'a' &&
-                  parent &&
-                  /^h(1|2|3|4|5|6)/.test(parent.tagName)
+                  nodeEl.tagName === 'a' &&
+                  parentEl &&
+                  parentEl.tagName &&
+                  /^h(1|2|3|4|5|6)/.test(parentEl.tagName)
                 ) {
-                  parent.children = parent.children.slice(1)
+                  if (parentEl.children) {
+                    parentEl.children = parentEl.children.slice(1)
+                  }
                 }
               },
             }}

@@ -16,12 +16,6 @@ export function unescapeHtml(html: string): string {
     .replace(/&amp;/g, '&')
 }
 
-function formatText(text: string, useBr = false): string {
-  const escaped = escapeHtml(text)
-  if (useBr) return escaped.split('\n').map(line => `<p>${line.replace(/\n/g, '<br>')}</p>`).join('')
-  return escaped.split('\n').map(line => line.trim() ? `<p>${line}</p>` : '').join('')
-}
-
 /**
  * インラインマークダウン（リンク、太字、斜体、コード）を処理する
  * プレースホルダーを使って安全にエスケープとマークダウン処理を両立

@@ -92,7 +92,7 @@ export async function createCertification(
     const result = certificationFormSchema.safeParse(input)
 
     if (!result.success) {
-      const fieldErrors = result.error.flatten().fieldErrors
+      const _fieldErrors = result.error.flatten().fieldErrors
       return {
         success: false,
         error: '入力内容に誤りがあります',

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Loader2, AlertCircle, X } from 'lucide-react'
+import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/shared/ui/button'
 import { getQuestionsWithChoices } from '@/lib/actions/study'
 import { useStudyStore } from '@/store/study-store'
@@ -99,7 +99,7 @@ export default function PracticePage() {
           questions: result.data,
           mode,
         })
-      } catch (err) {
+      } catch (_err) {
         setError('予期しないエラーが発生しました')
       } finally {
         setIsLoading(false)
@@ -237,7 +237,6 @@ export default function PracticePage() {
             {currentQuestion.choices.map((choice: Choice) => (
               <ChoiceOption
                 key={choice.id}
-                choiceId={choice.id}
                 choiceText={choice.choice_text}
                 isSelected={selectedChoiceIds.includes(choice.id)}
                 isCorrect={choice.is_correct}
