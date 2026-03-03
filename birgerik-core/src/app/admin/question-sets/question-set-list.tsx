@@ -29,7 +29,9 @@ interface QuestionSetListProps {
 
 export function QuestionSetList({ initialQuestionSets, certifications }: QuestionSetListProps) {
   const router = useRouter()
-  const [questionSets, setQuestionSets] = useState(initialQuestionSets)
+  // toggle の楽観的 UI 用オーバーライドのみ state で管理。
+  // initialQuestionSets は router.refresh() 後に更新される props を直接使用。
+  const [optimisticActive, setOptimisticActive] = useState<Record<string, boolean>>({})
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [selectedQuestionSet, setSelectedQuestionSet] = useState<QuestionSetRow | null>(null)
@@ -47,22 +49,20 @@ export function QuestionSetList({ initialQuestionSets, certifications }: Questio
   }
 
   const handleToggleActive = async (qs: QuestionSetRow) => {
-    const newActive = !qs.is_active
-    setQuestionSets((prev) =>
-      prev.map((item) => (item.id === qs.id ? { ...item, is_active: newActive } : item))
-    )
+    const currentActive = optimisticActive[qs.id] !== undefined ? optimisticActive[qs.id] : qs.is_active
+    const newActive = !currentActive
+    setOptimisticActive((prev) => ({ ...prev, [qs.id]: newActive }))
     try {
       const result = await toggleQuestionSetActive(qs.id, newActive)
       if (!result.success) {
-        setQuestionSets((prev) =>
-          prev.map((item) => (item.id === qs.id ? { ...item, is_active: qs.is_active } : item))
-        )
+        setOptimisticActive((prev) => { const next = { ...prev }; delete next[qs.id]; return next })
         toast.error(result.error || '更新に失敗しました')
+      } else {
+        setOptimisticActive((prev) => { const next = { ...prev }; delete next[qs.id]; return next })
+        router.refresh()
       }
     } catch {
-      setQuestionSets((prev) =>
-        prev.map((item) => (item.id === qs.id ? { ...item, is_active: qs.is_active } : item))
-      )
+      setOptimisticActive((prev) => { const next = { ...prev }; delete next[qs.id]; return next })
       toast.error('更新に失敗しました')
     }
   }
@@ -85,7 +85,7 @@ export function QuestionSetList({ initialQuestionSets, certifications }: Questio
       </div>
 
       {/* Table */}
-      {questionSets.length === 0 ? (
+      {initialQuestionSets.length === 0 ? (
         <div className="bg-white border-2 border-teal-50 rounded-2xl shadow-sm">
           <EmptyState
             icon={<FolderHeart className="h-8 w-8" />}
@@ -115,8 +115,9 @@ export function QuestionSetList({ initialQuestionSets, certifications }: Questio
               </tr>
             </thead>
             <tbody className="divide-y divide-teal-50">
-              {questionSets.map((qs) => {
+              {initialQuestionSets.map((qs) => {
                 const count = qs.questions?.[0]?.count || 0
+                const isActive = optimisticActive[qs.id] !== undefined ? optimisticActive[qs.id] : qs.is_active
                 return (
                   <tr key={qs.id} className="hover:bg-teal-50/50 transition-colors duration-200 group">
                     <td className="px-6 py-4 font-bold text-gray-800">{qs.name}</td>
@@ -129,10 +130,10 @@ export function QuestionSetList({ initialQuestionSets, certifications }: Questio
                     <td className="px-6 py-4">
                       <button
                         onClick={() => handleToggleActive(qs)}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-teal-400/50 focus:ring-offset-2 ${qs.is_active ? 'bg-teal-400' : 'bg-gray-200'}`}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-teal-400/50 focus:ring-offset-2 ${isActive ? 'bg-teal-400' : 'bg-gray-200'}`}
                       >
                         <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 shadow-sm ${qs.is_active ? 'translate-x-6' : 'translate-x-1'}`}
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 shadow-sm ${isActive ? 'translate-x-6' : 'translate-x-1'}`}
                         />
                       </button>
                     </td>

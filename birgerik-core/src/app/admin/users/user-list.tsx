@@ -21,7 +21,6 @@ interface UserListProps {
 
 export function UserList({ initialUsers }: UserListProps) {
   const router = useRouter()
-  const [users] = useState(initialUsers)
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<UserRow | null>(null)
@@ -55,7 +54,7 @@ export function UserList({ initialUsers }: UserListProps) {
       </div>
 
       {/* Table */}
-      {users.length === 0 ? (
+      {initialUsers.length === 0 ? (
         <div className="bg-white border-2 border-teal-50 rounded-2xl shadow-sm">
           <EmptyState
             icon={<Users className="h-8 w-8" />}
@@ -85,7 +84,7 @@ export function UserList({ initialUsers }: UserListProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-teal-50">
-              {users.map((user) => (
+              {initialUsers.map((user) => (
                 <tr key={user.id} className="hover:bg-teal-50/50 transition-colors duration-200 group">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">

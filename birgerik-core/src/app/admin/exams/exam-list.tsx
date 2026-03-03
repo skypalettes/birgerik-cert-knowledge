@@ -26,7 +26,6 @@ interface ExamListProps {
 
 export function ExamList({ initialExams, questionSets }: ExamListProps) {
   const router = useRouter()
-  const [exams] = useState(initialExams)
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [selectedExam, setSelectedExam] = useState<ExamRow | null>(null)
@@ -51,7 +50,7 @@ export function ExamList({ initialExams, questionSets }: ExamListProps) {
       </div>
 
       {/* Table */}
-      {exams.length === 0 ? (
+      {initialExams.length === 0 ? (
         <div className="bg-white border-2 border-teal-50 rounded-2xl shadow-sm">
           <EmptyState
             icon={<CheckCircle className="h-8 w-8" />}
@@ -81,7 +80,7 @@ export function ExamList({ initialExams, questionSets }: ExamListProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-teal-50">
-              {exams.map((exam) => (
+              {initialExams.map((exam) => (
                 <tr key={exam.id} className="hover:bg-teal-50/50 transition-colors duration-200 group">
                   <td className="px-6 py-4">
                     <div className="font-bold text-gray-800">{exam.question_set?.name || '—'}</div>

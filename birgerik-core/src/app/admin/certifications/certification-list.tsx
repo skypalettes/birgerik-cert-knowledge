@@ -19,7 +19,6 @@ interface CertificationListProps {
 
 export function CertificationList({ initialCertifications }: CertificationListProps) {
   const router = useRouter()
-  const [certifications] = useState(initialCertifications)
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [selectedCertification, setSelectedCertification] = useState<CertificationWithCount | null>(null)
@@ -54,7 +53,7 @@ export function CertificationList({ initialCertifications }: CertificationListPr
       </div>
 
       {/* Table */}
-      {certifications.length === 0 ? (
+      {initialCertifications.length === 0 ? (
         <div className="bg-white border-2 border-teal-50 rounded-2xl shadow-sm">
           <EmptyState
             icon={<Award className="h-8 w-8" />}
@@ -84,7 +83,7 @@ export function CertificationList({ initialCertifications }: CertificationListPr
               </tr>
             </thead>
             <tbody className="divide-y divide-teal-50">
-              {certifications.map((cert) => {
+              {initialCertifications.map((cert) => {
                 const questionSetCount = cert.question_sets?.[0]?.count || 0
                 return (
                   <tr key={cert.id} className="hover:bg-teal-50/50 transition-colors duration-200 group">

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useForm, Controller } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Sparkles } from 'lucide-react'
 import { Modal, ModalFooter } from '@/components/shared/ui/modal'
@@ -32,7 +32,7 @@ export function ExamFormModal({ isOpen, onClose, onSuccess, exam, questionSets }
   const [isSubmitting, setIsSubmitting] = useState(false)
   const isEditMode = !!exam
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<ExamFormInput>({
+  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<ExamFormInput>({
     resolver: zodResolver(examFormSchema),
     defaultValues: {
       question_set_id: '',
@@ -41,6 +41,8 @@ export function ExamFormModal({ isOpen, onClose, onSuccess, exam, questionSets }
       passing_score: 65,
     },
   })
+
+  const passingScore = watch('passing_score')
 
   useEffect(() => {
     if (exam) {
@@ -141,9 +143,12 @@ export function ExamFormModal({ isOpen, onClose, onSuccess, exam, questionSets }
 
         {/* 合格スコア */}
         <div className="space-y-2">
-          <label className="block text-sm font-bold text-gray-700">
-            合格スコア（%）
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="block text-sm font-bold text-gray-700">
+              合格スコア（%）
+            </label>
+            <span className="text-lg font-extrabold text-teal-600">{passingScore ?? 65}%</span>
+          </div>
           <input
             type="range"
             min={0}
@@ -153,27 +158,14 @@ export function ExamFormModal({ isOpen, onClose, onSuccess, exam, questionSets }
             disabled={isSubmitting}
             className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer accent-teal-400"
           />
-          <Controller
-            name="passing_score"
-            control={null as unknown as ReturnType<typeof useForm>['control']}
-            render={() => <></>}
-          />
           <div className="flex justify-between text-xs text-gray-400">
             <span>0%</span>
-            <span className="font-bold text-teal-600">
-              {/* Render dynamically via register, fallback shown */}
-            </span>
+            <span>50%</span>
             <span>100%</span>
           </div>
-          <Input
-            type="number"
-            min={0}
-            max={100}
-            error={errors.passing_score?.message}
-            {...register('passing_score', { valueAsNumber: true })}
-            disabled={isSubmitting}
-            placeholder="65"
-          />
+          {errors.passing_score && (
+            <p className="text-xs text-red-500 font-medium">{errors.passing_score.message}</p>
+          )}
         </div>
       </form>
 

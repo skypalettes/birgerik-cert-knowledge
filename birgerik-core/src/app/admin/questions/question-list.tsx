@@ -31,7 +31,6 @@ interface QuestionListProps {
 
 export function QuestionList({ initialQuestions, questionSets }: QuestionListProps) {
   const router = useRouter()
-  const [questions] = useState(initialQuestions)
   const [selectedCertificationId, setSelectedCertificationId] = useState<string>('all')
   const [selectedQuestionSetId, setSelectedQuestionSetId] = useState<string>('all')
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)
@@ -51,7 +50,7 @@ export function QuestionList({ initialQuestions, questionSets }: QuestionListPro
     ? questionSets
     : questionSets.filter((qs) => qs.certification?.id === selectedCertificationId)
 
-  let filteredQuestions = questions
+  let filteredQuestions = initialQuestions
   if (selectedCertificationId !== 'all') {
     filteredQuestions = filteredQuestions.filter((q) => q.question_set?.certification?.id === selectedCertificationId)
   }
