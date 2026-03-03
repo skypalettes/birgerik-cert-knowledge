@@ -48,7 +48,8 @@ export async function login(
     }
 
     const userRole = data.user?.user_metadata?.role
-    if (userRole !== 'admin') {
+    const allowedRoles = ['admin', 'question_manager']
+    if (!allowedRoles.includes(userRole)) {
       await supabase.auth.signOut()
       return { success: false, error: '管理者権限がありません' }
     }
