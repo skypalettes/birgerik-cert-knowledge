@@ -16,7 +16,7 @@ export async function authenticateRequest(
   }
 }
 
-export function withAuth<T = void>(
+export function withAuth<T extends Record<string, string> = Record<string, string>>(
   handler: (request: NextRequest, params: T) => Promise<NextResponse>
 ) {
   return async (request: NextRequest, context: { params: Promise<T> }): Promise<NextResponse> => {

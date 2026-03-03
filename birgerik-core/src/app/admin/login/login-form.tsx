@@ -3,8 +3,9 @@
 import { useActionState } from 'react'
 import { BookHeart, Mail, Lock, Loader2 } from 'lucide-react'
 import { login } from './actions'
+import type { LoginFormState } from './actions'
 
-const initialState = { success: false }
+const initialState: LoginFormState = { success: false }
 
 export function LoginForm() {
   const [state, formAction, isPending] = useActionState(login, initialState)

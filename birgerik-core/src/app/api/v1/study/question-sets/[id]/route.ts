@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { successResponse, errorResponse, notFoundResponse } from '@/lib/api/response'
+import { successResponse, notFoundResponse } from '@/lib/api/response'
 import { getQuestionSetDetail } from '@/lib/database/study'
 
 type Params = { id: string }

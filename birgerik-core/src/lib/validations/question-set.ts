@@ -14,7 +14,7 @@ export const questionSetFormSchema = z.object({
     .string()
     .uuid('資格を選択してください')
     .min(1, '資格を選択してください'),
-  is_active: z.boolean().default(true),
+  is_active: z.boolean(),
 })
 
 export const questionSetSchema = z.object({

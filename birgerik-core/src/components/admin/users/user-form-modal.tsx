@@ -9,19 +9,12 @@ import { Modal, ModalFooter } from '@/components/shared/ui/modal'
 import { toast } from '@/lib/utils/toast'
 import { createUser, updateUser } from '@/lib/actions/users'
 
-const createSchema = z.object({
-  email: z.string().email('有効なメールアドレスを入力してください'),
-  password: z.string().min(8, 'パスワードは8文字以上で入力してください'),
-  role: z.enum(['admin', 'user']),
-})
-
 const editSchema = z.object({
   email: z.string().email('有効なメールアドレスを入力してください'),
   password: z.string().min(8, 'パスワードは8文字以上で入力してください').or(z.literal('')),
   role: z.enum(['admin', 'user']),
 })
 
-type CreateFormValues = z.infer<typeof createSchema>
 type EditFormValues = z.infer<typeof editSchema>
 
 type UserRow = {
@@ -47,7 +40,7 @@ export function UserFormModal({ isOpen, onClose, onSuccess, user }: UserFormModa
     reset,
     formState: { errors, isSubmitting },
   } = useForm<EditFormValues>({
-    resolver: zodResolver(isEdit ? editSchema : createSchema),
+    resolver: zodResolver(editSchema),
     defaultValues: {
       email: '',
       password: '',
@@ -86,7 +79,7 @@ export function UserFormModal({ isOpen, onClose, onSuccess, user }: UserFormModa
           toast.error(result.error || '更新に失敗しました')
         }
       } else {
-        const result = await createUser(data.email, data.password, data.role)
+        const result = await createUser({ email: data.email, password: data.password, role: data.role })
         if (result.success) {
           toast.success('ユーザーを作成しました')
           onSuccess()
