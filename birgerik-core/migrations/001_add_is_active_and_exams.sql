@@ -54,14 +54,16 @@ CREATE TRIGGER exams_updated_at
 ALTER TABLE exams ENABLE ROW LEVEL SECURITY;
 
 -- サービスロール（管理者）は全操作可能
-CREATE POLICY IF NOT EXISTS "service_role_all" ON exams
+DROP POLICY IF EXISTS "service_role_all" ON exams;
+CREATE POLICY "service_role_all" ON exams
   FOR ALL
   TO service_role
   USING (true)
   WITH CHECK (true);
 
 -- 認証済みユーザーは読み取りのみ（学習アプリ用）
-CREATE POLICY IF NOT EXISTS "authenticated_read" ON exams
+DROP POLICY IF EXISTS "authenticated_read" ON exams;
+CREATE POLICY "authenticated_read" ON exams
   FOR SELECT
   TO authenticated
   USING (true);
