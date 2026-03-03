@@ -56,9 +56,17 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/admin/login', request.url))
     }
 
-    if (user.user_metadata?.role !== 'admin') {
+    const role = user.user_metadata?.role
+    const allowedRoles = ['admin', 'question_manager']
+
+    if (!allowedRoles.includes(role)) {
       await supabase.auth.signOut()
       return NextResponse.redirect(new URL('/admin/login?error=forbidden', request.url))
+    }
+
+    // 問題管理者はユーザ管理ページにアクセス不可
+    if (role === 'question_manager' && pathname.startsWith('/admin/users')) {
+      return NextResponse.redirect(new URL('/admin/certifications', request.url))
     }
 
     return response

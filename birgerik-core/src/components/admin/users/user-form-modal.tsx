@@ -12,7 +12,7 @@ import { createUser, updateUser } from '@/lib/actions/users'
 const editSchema = z.object({
   email: z.string().email('有効なメールアドレスを入力してください'),
   password: z.string().min(8, 'パスワードは8文字以上で入力してください').or(z.literal('')),
-  role: z.enum(['admin', 'user']),
+  role: z.enum(['admin', 'question_manager', 'user']),
 })
 
 type EditFormValues = z.infer<typeof editSchema>
@@ -54,7 +54,7 @@ export function UserFormModal({ isOpen, onClose, onSuccess, user }: UserFormModa
         reset({
           email: user.email || '',
           password: '',
-          role: (user.role as 'admin' | 'user') || 'user',
+          role: (user.role as 'admin' | 'question_manager' | 'user') || 'user',
         })
       } else {
         reset({ email: '', password: '', role: 'user' })
@@ -142,8 +142,9 @@ export function UserFormModal({ isOpen, onClose, onSuccess, user }: UserFormModa
             {...register('role')}
             className="w-full px-4 py-2.5 text-sm border-2 border-gray-100 rounded-xl focus:border-teal-300 focus:outline-none transition-colors bg-white"
           >
-            <option value="user">ユーザー</option>
             <option value="admin">管理者</option>
+            <option value="question_manager">問題管理者</option>
+            <option value="user">ユーザー</option>
           </select>
           {errors.role && (
             <p className="mt-1 text-xs text-red-500">{errors.role.message}</p>

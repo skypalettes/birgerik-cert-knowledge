@@ -5,15 +5,16 @@ import { usePathname, useRouter } from 'next/navigation'
 import { BookHeart, Award, FolderHeart, LayoutList, CheckCircle, Users, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 
-const navItems = [
-  { href: '/admin/certifications', icon: Award, label: '資格管理' },
-  { href: '/admin/question-sets', icon: FolderHeart, label: '問題集管理' },
-  { href: '/admin/questions', icon: LayoutList, label: '問題管理' },
-  { href: '/admin/exams', icon: CheckCircle, label: '試験管理' },
-  { href: '/admin/users', icon: Users, label: 'ユーザ管理' },
+const allNavItems = [
+  { href: '/admin/certifications', icon: Award, label: '資格管理', roles: ['admin', 'question_manager'] },
+  { href: '/admin/question-sets', icon: FolderHeart, label: '問題集管理', roles: ['admin', 'question_manager'] },
+  { href: '/admin/questions', icon: LayoutList, label: '問題管理', roles: ['admin', 'question_manager'] },
+  { href: '/admin/exams', icon: CheckCircle, label: '試験管理', roles: ['admin', 'question_manager'] },
+  { href: '/admin/users', icon: Users, label: 'ユーザ管理', roles: ['admin'] },
 ]
 
-export function AdminSidebar() {
+export function AdminSidebar({ role }: { role: string }) {
+  const navItems = allNavItems.filter((item) => item.roles.includes(role))
   const pathname = usePathname()
   const router = useRouter()
   const [isPending, startTransition] = useTransition()

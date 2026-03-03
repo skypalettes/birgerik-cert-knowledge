@@ -16,9 +16,11 @@ export default async function AdminLayout({
     return <>{children}</>
   }
 
+  const role = (user.user_metadata?.role as string) || 'admin'
+
   return (
     <div className="flex h-screen overflow-hidden bg-teal-50 text-gray-800 antialiased">
-      <AdminSidebar />
+      <AdminSidebar role={role} />
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top bar */}
         <header className="h-16 bg-white border-b border-teal-100 flex items-center justify-end px-8 shrink-0">

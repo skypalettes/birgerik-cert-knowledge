@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Edit2, Trash2, Users, Shield, User } from 'lucide-react'
+import { Plus, Edit2, Trash2, Users, Shield, User, BookOpen } from 'lucide-react'
 import { UserFormModal } from '@/components/admin/users/user-form-modal'
 import { DeleteConfirmationDialog } from '@/components/admin/users/delete-confirmation-dialog'
 import { EmptyState } from '@/components/shared/ui/empty-state'
@@ -101,6 +101,11 @@ export function UserList({ initialUsers }: UserListProps) {
                       <span className="flex items-center gap-1 bg-teal-100 text-teal-700 px-2 py-1 rounded-md text-xs font-bold w-fit">
                         <Shield className="w-3 h-3" />
                         管理者
+                      </span>
+                    ) : user.role === 'question_manager' ? (
+                      <span className="flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded-md text-xs font-bold w-fit">
+                        <BookOpen className="w-3 h-3" />
+                        問題管理者
                       </span>
                     ) : (
                       <span className="flex items-center gap-1 bg-gray-100 text-gray-600 px-2 py-1 rounded-md text-xs font-bold w-fit">
