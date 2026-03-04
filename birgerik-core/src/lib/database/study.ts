@@ -42,6 +42,7 @@ export async function getCertificationsWithQuestionSets(): Promise<{
     ])
 
     if (questionCountsResult.error) throw questionCountsResult.error
+    if (examSetsResult.error) throw examSetsResult.error
 
     const countMap = new Map<string, number>()
     questionCountsResult.data?.forEach((q: any) => {

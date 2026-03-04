@@ -8,14 +8,14 @@ export async function middleware(request: NextRequest) {
   // ==================== CORS for study API ====================
   if (pathname.startsWith('/api/v1/study')) {
     const origin = request.headers.get('origin') || ''
-    const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map(o => o.trim())
+    const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map(o => o.trim()).filter(Boolean)
     const isAllowed = allowedOrigins.length === 0 || allowedOrigins.includes(origin) || origin === ''
 
     if (request.method === 'OPTIONS') {
       return new NextResponse(null, {
         status: 204,
         headers: {
-          'Access-Control-Allow-Origin': isAllowed ? origin : '',
+          'Access-Control-Allow-Origin': isAllowed ? (origin || '*') : '',
           'Access-Control-Allow-Methods': 'GET, OPTIONS',
           'Access-Control-Allow-Headers': 'Authorization, Content-Type',
           'Access-Control-Max-Age': '86400',
