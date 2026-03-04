@@ -1,0 +1,9 @@
+{
+  "name": "birgerik",
+  "private": true,
+  "workspaces": [
+    "birgerik-core",
+    "birgerik-web",
+    "packages/*"
+  ]
+}
