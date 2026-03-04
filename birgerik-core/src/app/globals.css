@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f0fdfa;
+  --foreground: #0f172a;
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* Teal scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f0fdfa;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #99f6e4;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2dd4bf;
+}
+
+/* Markdown editor overrides */
+.w-md-editor {
+  border: 2px solid #f1f5f9 !important;
+  border-radius: 0.75rem !important;
+  box-shadow: none !important;
+}
+
+.w-md-editor:focus-within {
+  border-color: #5eead4 !important;
+}
+
+.w-md-editor-toolbar {
+  background-color: #f0fdfa !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  border-radius: 0.75rem 0.75rem 0 0 !important;
+}
+
+/* Focus ring reset */
+*:focus-visible {
+  outline: 2px solid #2dd4bf;
+  outline-offset: 2px;
+}
+
+button:focus-visible {
+  outline: 2px solid #2dd4bf;
+  outline-offset: 2px;
+}
