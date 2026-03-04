@@ -17,8 +17,15 @@ async function apiFetch<T>(path: string): Promise<T> {
     next: { revalidate: 60 },
   })
   if (!res.ok) {
-    const error = await res.json().catch(() => ({ error: 'Unknown error' }))
-    throw new Error(error.error || `HTTP ${res.status}`)
+    const text = await res.text().catch(() => '')
+    let message: string
+    try {
+      const json = JSON.parse(text)
+      message = json.error || `HTTP ${res.status}`
+    } catch {
+      message = `HTTP ${res.status} — レスポンスがJSONではありません。birgerik-core が正しく起動しているか確認してください。(URL: ${baseUrl}${path})`
+    }
+    throw new Error(message)
   }
   return res.json()
 }
