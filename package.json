@@ -1,9 +1,7 @@
 {
   "name": "birgerik",
   "private": true,
-  "workspaces": [
-    "birgerik-core",
-    "birgerik-web",
-    "packages/*"
-  ]
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild", "sharp", "unrs-resolver"]
+  }
 }
