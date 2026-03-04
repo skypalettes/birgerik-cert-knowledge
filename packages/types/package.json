@@ -1,34 +1,8 @@
 {
-  "name": "@irunahub/birgerik-types",
+  "name": "@birgerik/types",
   "version": "1.0.0",
-  "description": "Shared TypeScript types for Birgerik projects",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "files": [
-    "dist",
-    "src"
-  ],
-  "scripts": {
-    "build": "tsc",
-    "watch": "tsc --watch"
-  },
-  "keywords": [
-    "birgerik",
-    "types",
-    "typescript"
-  ],
-  "author": "",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/irunahub/birgerik.git",
-    "directory": "packages/types"
-  },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com",
-    "@irunahub": "https://npm.pkg.github.com"
-  },
-  "devDependencies": {
-    "typescript": "^5.0.0"
-  }
+  "private": true,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "files": ["src"]
 }
