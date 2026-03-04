@@ -5,10 +5,15 @@ import type {
   GetExamConfigResponse,
 } from '@birgerik/types'
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
-
 async function apiFetch<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL
+  if (!baseUrl) {
+    throw new Error(
+      'NEXT_PUBLIC_API_BASE_URL が未設定です。birgerik-web/.env.local に設定してください。\n' +
+      '例: NEXT_PUBLIC_API_BASE_URL=http://localhost:3001/api/v1'
+    )
+  }
+  const res = await fetch(`${baseUrl}${path}`, {
     next: { revalidate: 60 },
   })
   if (!res.ok) {
