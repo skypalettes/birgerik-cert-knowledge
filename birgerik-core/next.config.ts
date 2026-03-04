@@ -5,7 +5,8 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
-  outputFileTracingRoot: path.join(__dirname, "../../"),
+  transpilePackages: ['@birgerik/types'],
+  outputFileTracingRoot: path.join(__dirname, "../"),
 };
 
 export default nextConfig;
