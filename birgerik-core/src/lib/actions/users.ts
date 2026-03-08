@@ -9,6 +9,7 @@ import {
   deleteUser as dbDeleteUser,
   type AdminUser,
 } from '@/lib/database/users'
+import { verifyAdminOnlyAccess } from '@/lib/auth/verify'
 
 export type { AdminUser }
 
@@ -30,6 +31,12 @@ export async function createUser(formData: {
   password: string
   role: string
 }): Promise<ActionResult<{ id: string }>> {
+  const auth = await verifyAdminOnlyAccess()
+  if (!auth.authorized) {
+    console.error('[Action] createUser: 認証失敗', { error: auth.error })
+    return { success: false, error: auth.error }
+  }
+
   try {
     const result = userCreateSchema.safeParse(formData)
     if (!result.success) {
@@ -44,7 +51,7 @@ export async function createUser(formData: {
     revalidatePath('/admin/users')
     return dbResult
   } catch (error) {
-    console.error('Error creating user:', error)
+    console.error('[Action] createUser: エラー', error)
     return { success: false, error: 'ユーザーの作成に失敗しました' }
   }
 }
@@ -53,6 +60,12 @@ export async function updateUser(
   id: string,
   formData: { email?: string; password?: string; role?: string }
 ): Promise<ActionResult> {
+  const auth = await verifyAdminOnlyAccess()
+  if (!auth.authorized) {
+    console.error('[Action] updateUser: 認証失敗', { id, error: auth.error })
+    return { success: false, error: auth.error }
+  }
+
   try {
     const result = userUpdateSchema.safeParse({ id, ...formData })
     if (!result.success) {
@@ -67,19 +80,25 @@ export async function updateUser(
     revalidatePath('/admin/users')
     return dbResult
   } catch (error) {
-    console.error('Error updating user:', error)
+    console.error('[Action] updateUser: エラー', { id, error })
     return { success: false, error: 'ユーザーの更新に失敗しました' }
   }
 }
 
 export async function deleteUser(id: string): Promise<ActionResult> {
+  const auth = await verifyAdminOnlyAccess()
+  if (!auth.authorized) {
+    console.error('[Action] deleteUser: 認証失敗', { id, error: auth.error })
+    return { success: false, error: auth.error }
+  }
+
   try {
     const dbResult = await dbDeleteUser(id)
     if (!dbResult.success) return dbResult
     revalidatePath('/admin/users')
     return dbResult
   } catch (error) {
-    console.error('Error deleting user:', error)
+    console.error('[Action] deleteUser: エラー', { id, error })
     return { success: false, error: 'ユーザーの削除に失敗しました' }
   }
 }

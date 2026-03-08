@@ -10,6 +10,7 @@ import {
   deleteCertification as dbDeleteCertification,
   type CertificationWithCount,
 } from '@/lib/database/certifications'
+import { verifyAdminAccess } from '@/lib/auth/verify'
 
 export type { CertificationWithCount }
 
@@ -31,6 +32,12 @@ export async function getCertification(id: string) {
 export async function createCertification(
   formData: CertificationFormInput
 ): Promise<ActionResult<{ id: string }>> {
+  const auth = await verifyAdminAccess()
+  if (!auth.authorized) {
+    console.error('[Action] createCertification: 認証失敗', { error: auth.error })
+    return { success: false, error: auth.error }
+  }
+
   try {
     const result = certificationFormSchema.safeParse(formData)
     if (!result.success) {
@@ -45,7 +52,7 @@ export async function createCertification(
     revalidatePath('/admin/certifications')
     return dbResult
   } catch (error) {
-    console.error('Error creating certification:', error)
+    console.error('[Action] createCertification: DB エラー', error)
     return { success: false, error: '資格の作成に失敗しました' }
   }
 }
@@ -54,6 +61,12 @@ export async function updateCertification(
   id: string,
   formData: CertificationFormInput
 ): Promise<ActionResult> {
+  const auth = await verifyAdminAccess()
+  if (!auth.authorized) {
+    console.error('[Action] updateCertification: 認証失敗', { id, error: auth.error })
+    return { success: false, error: auth.error }
+  }
+
   try {
     const input = {
       ...formData,
@@ -64,19 +77,25 @@ export async function updateCertification(
     revalidatePath('/admin/certifications')
     return dbResult
   } catch (error) {
-    console.error('Error updating certification:', error)
+    console.error('[Action] updateCertification: DB エラー', { id, error })
     return { success: false, error: '資格の更新に失敗しました' }
   }
 }
 
 export async function deleteCertification(id: string): Promise<ActionResult> {
+  const auth = await verifyAdminAccess()
+  if (!auth.authorized) {
+    console.error('[Action] deleteCertification: 認証失敗', { id, error: auth.error })
+    return { success: false, error: auth.error }
+  }
+
   try {
     const dbResult = await dbDeleteCertification(id)
     if (!dbResult.success) return dbResult
     revalidatePath('/admin/certifications')
     return dbResult
   } catch (error) {
-    console.error('Error deleting certification:', error)
+    console.error('[Action] deleteCertification: DB エラー', { id, error })
     return { success: false, error: '資格の削除に失敗しました' }
   }
 }
