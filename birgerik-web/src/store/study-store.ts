@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import type { QuestionWithChoices } from '@birgerik/types'
 
-type StudyMode = 'sequential' | 'random' | 'review'
+type StudyMode = 'random' | 'review'
 
 interface AnswerHistory {
   questionId: string
@@ -78,14 +78,17 @@ export const useStudyStore = create<StudyState & StudyActions>()(
       ...initialState,
 
       startSession: ({ questionSetId, questionSetName, certificationName, questions, mode }) => {
-        const orderedQuestions = mode === 'random' ? shuffleArray(questions) : questions
+        const shuffledQuestions = shuffleArray(questions).map((q) => ({
+          ...q,
+          choices: shuffleArray(q.choices),
+        }))
         set({
           ...initialState,
           questionSetId,
           questionSetName,
           certificationName,
           mode,
-          questions: orderedQuestions,
+          questions: shuffledQuestions,
           isSessionActive: true,
         })
       },
@@ -170,7 +173,9 @@ export const useStudyStore = create<StudyState & StudyActions>()(
         const wrongIds = new Set(
           state.answerHistory.filter((h) => !h.isCorrect).map((h) => h.questionId)
         )
-        const wrongQuestions = state.questions.filter((q) => wrongIds.has(q.id))
+        const wrongQuestions = shuffleArray(
+          state.questions.filter((q) => wrongIds.has(q.id))
+        ).map((q) => ({ ...q, choices: shuffleArray(q.choices) }))
         set({
           ...initialState,
           questionSetId: state.questionSetId,

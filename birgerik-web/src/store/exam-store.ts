@@ -74,13 +74,17 @@ const initialState: ExamState = {
   finishedAt: null,
 }
 
-function shuffleAndSample<T>(array: T[], count: number): T[] {
+function shuffleArray<T>(array: T[]): T[] {
   const arr = [...array]
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
     ;[arr[i], arr[j]] = [arr[j], arr[i]]
   }
-  return arr.slice(0, count)
+  return arr
+}
+
+function shuffleAndSample<T>(array: T[], count: number): T[] {
+  return shuffleArray(array).slice(0, count)
 }
 
 export const useExamStore = create<ExamState & ExamActions>()(
@@ -89,7 +93,10 @@ export const useExamStore = create<ExamState & ExamActions>()(
       ...initialState,
 
       startExam: ({ examConfig, questionSetName, certificationName, questions }) => {
-        const sampled = shuffleAndSample(questions, examConfig.question_count)
+        const sampled = shuffleAndSample(questions, examConfig.question_count).map((q) => ({
+          ...q,
+          choices: shuffleArray(q.choices),
+        }))
         set({
           ...initialState,
           examConfig,
