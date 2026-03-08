@@ -1,12 +1,5 @@
-import { createClient as createSupabaseAdminClient } from '@supabase/supabase-js'
+import { createAdminClient } from '@/lib/supabase/admin'
 import type { DatabaseResult } from './types'
-
-function getAdminClient() {
-  return createSupabaseAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
-}
 
 export interface AdminUser {
   id: string
@@ -18,7 +11,7 @@ export interface AdminUser {
 
 export async function getUsers(): Promise<DatabaseResult<AdminUser[]>> {
   try {
-    const supabase = getAdminClient()
+    const supabase = createAdminClient()
     const { data, error } = await supabase.auth.admin.listUsers()
     if (error) return { success: false, error: error.message }
 
@@ -43,7 +36,7 @@ export async function createUser(
   role: string
 ): Promise<DatabaseResult<{ id: string }>> {
   try {
-    const supabase = getAdminClient()
+    const supabase = createAdminClient()
     const { data, error } = await supabase.auth.admin.createUser({
       email,
       password,
@@ -63,7 +56,7 @@ export async function updateUser(
   updates: { email?: string; password?: string; role?: string }
 ): Promise<DatabaseResult> {
   try {
-    const supabase = getAdminClient()
+    const supabase = createAdminClient()
     const updateData: Record<string, unknown> = {}
     if (updates.email) updateData.email = updates.email
     if (updates.password) updateData.password = updates.password
@@ -80,7 +73,7 @@ export async function updateUser(
 
 export async function deleteUser(id: string): Promise<DatabaseResult> {
   try {
-    const supabase = getAdminClient()
+    const supabase = createAdminClient()
     const { error } = await supabase.auth.admin.deleteUser(id)
     if (error) return { success: false, error: error.message }
     return { success: true }

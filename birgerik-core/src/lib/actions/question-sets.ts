@@ -11,6 +11,7 @@ import {
   deleteQuestionSet as dbDeleteQuestionSet,
 } from '@/lib/database/question-sets'
 import { getCertificationsForSelect } from '@/lib/database/certifications'
+import { verifyAdminAccess } from '@/lib/auth/verify'
 
 export type ActionResult<T = void> = {
   success: boolean
@@ -32,6 +33,12 @@ export async function getCertificationsForSelect2() {
 }
 
 export async function createQuestionSet(formData: QuestionSetFormInput): Promise<ActionResult<{ id: string }>> {
+  const auth = await verifyAdminAccess()
+  if (!auth.authorized) {
+    console.error('[Action] createQuestionSet: 認証失敗', { error: auth.error })
+    return { success: false, error: auth.error }
+  }
+
   try {
     const result = questionSetFormSchema.safeParse(formData)
     if (!result.success) {
@@ -46,43 +53,61 @@ export async function createQuestionSet(formData: QuestionSetFormInput): Promise
     revalidatePath('/admin/question-sets')
     return dbResult
   } catch (error) {
-    console.error('Error creating question set:', error)
+    console.error('[Action] createQuestionSet: DB エラー', error)
     return { success: false, error: '問題集の作成に失敗しました' }
   }
 }
 
 export async function updateQuestionSet(id: string, formData: QuestionSetFormInput): Promise<ActionResult> {
+  const auth = await verifyAdminAccess()
+  if (!auth.authorized) {
+    console.error('[Action] updateQuestionSet: 認証失敗', { id, error: auth.error })
+    return { success: false, error: auth.error }
+  }
+
   try {
     const dbResult = await dbUpdateQuestionSet(id, formData)
     if (!dbResult.success) return dbResult
     revalidatePath('/admin/question-sets')
     return dbResult
   } catch (error) {
-    console.error('Error updating question set:', error)
+    console.error('[Action] updateQuestionSet: DB エラー', { id, error })
     return { success: false, error: '問題集の更新に失敗しました' }
   }
 }
 
 export async function toggleQuestionSetActive(id: string, is_active: boolean): Promise<ActionResult> {
+  const auth = await verifyAdminAccess()
+  if (!auth.authorized) {
+    console.error('[Action] toggleQuestionSetActive: 認証失敗', { id, error: auth.error })
+    return { success: false, error: auth.error }
+  }
+
   try {
     const dbResult = await dbToggleActive(id, is_active)
     if (!dbResult.success) return dbResult
     revalidatePath('/admin/question-sets')
     return dbResult
   } catch (error) {
-    console.error('Error toggling question set:', error)
+    console.error('[Action] toggleQuestionSetActive: DB エラー', { id, error })
     return { success: false, error: '問題集の更新に失敗しました' }
   }
 }
 
 export async function deleteQuestionSet(id: string): Promise<ActionResult> {
+  const auth = await verifyAdminAccess()
+  if (!auth.authorized) {
+    console.error('[Action] deleteQuestionSet: 認証失敗', { id, error: auth.error })
+    return { success: false, error: auth.error }
+  }
+
   try {
     const dbResult = await dbDeleteQuestionSet(id)
     if (!dbResult.success) return dbResult
     revalidatePath('/admin/question-sets')
     return dbResult
   } catch (error) {
-    console.error('Error deleting question set:', error)
+    console.error('[Action] deleteQuestionSet: DB エラー', { id, error })
     return { success: false, error: '問題集の削除に失敗しました' }
   }
 }

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { questionFormSchema, updateQuestionSchema } from '@/lib/validations/question'
 import { handleSupabaseError } from '@/lib/errors'
 import { formatMarkdownLint } from '@/lib/utils/markdown'
@@ -65,7 +66,7 @@ export async function createQuestion(input: unknown): Promise<DatabaseResult<{ i
     if (!result.success) return { success: false, error: '入力内容に誤りがあります' }
 
     const validatedData = result.data
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
     const formattedQuestionText = await formatMarkdownLint(validatedData.question_text)
     const explanation = validatedData.explanation.trim() === ''
@@ -112,7 +113,7 @@ export async function updateQuestion(id: string, input: unknown): Promise<Databa
     if (!result.success) return { success: false, error: '入力内容に誤りがあります' }
 
     const validatedData = result.data
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
     const formattedQuestionText = await formatMarkdownLint(validatedData.question_text)
     const formattedExplanation = validatedData.explanation
@@ -157,7 +158,7 @@ export async function updateQuestion(id: string, input: unknown): Promise<Databa
 
 export async function deleteQuestion(id: string): Promise<DatabaseResult> {
   try {
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const { error } = await supabase.from('questions').delete().eq('id', id)
     if (error) return { success: false, error: handleSupabaseError(error).message }
     return { success: true }

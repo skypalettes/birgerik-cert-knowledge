@@ -1,15 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
-import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { handleSupabaseError } from '@/lib/errors'
 import { examSchema, updateExamSchema } from '@/lib/validations/exam'
 import type { DatabaseResult } from './types'
-
-function getAdminClient() {
-  return createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
-}
 
 export async function getExams() {
   const supabase = await createClient()
@@ -66,7 +59,7 @@ export async function createExam(input: unknown): Promise<DatabaseResult<{ id: s
     if (!result.success) return { success: false, error: '入力内容に誤りがあります' }
 
     const supabase = await createClient()
-    const adminClient = getAdminClient()
+    const createAdminClient() = getAdminClient()
 
     const { count } = await supabase
       .from('questions')
@@ -77,7 +70,7 @@ export async function createExam(input: unknown): Promise<DatabaseResult<{ id: s
       return { success: false, error: `出題数は問題数（${count}問）以下にしてください` }
     }
 
-    const { data, error } = await adminClient
+    const { data, error } = await createAdminClient()
       .from('exams')
       .insert(result.data)
       .select('id')
@@ -98,7 +91,7 @@ export async function updateExam(input: unknown): Promise<DatabaseResult> {
 
     const { id, ...data } = result.data
     const supabase = await createClient()
-    const adminClient = getAdminClient()
+    const createAdminClient() = getAdminClient()
 
     const { count } = await supabase
       .from('questions')
@@ -109,7 +102,7 @@ export async function updateExam(input: unknown): Promise<DatabaseResult> {
       return { success: false, error: `出題数は問題数（${count}問）以下にしてください` }
     }
 
-    const { error } = await adminClient
+    const { error } = await createAdminClient()
       .from('exams')
       .update({ ...data, updated_at: new Date().toISOString() })
       .eq('id', id)
@@ -124,8 +117,8 @@ export async function updateExam(input: unknown): Promise<DatabaseResult> {
 
 export async function deleteExam(id: string): Promise<DatabaseResult> {
   try {
-    const adminClient = getAdminClient()
-    const { error } = await adminClient.from('exams').delete().eq('id', id)
+    const createAdminClient() = getAdminClient()
+    const { error } = await createAdminClient().from('exams').delete().eq('id', id)
     if (error) return { success: false, error: handleSupabaseError(error).message }
     return { success: true }
   } catch (error) {

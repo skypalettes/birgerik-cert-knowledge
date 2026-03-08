@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { certificationFormSchema, updateCertificationSchema } from '@/lib/validations/certification'
 import { handleSupabaseError } from '@/lib/errors'
 import type { Database } from '@/lib/types/database.types'
@@ -52,7 +53,7 @@ export async function createCertification(input: unknown): Promise<DatabaseResul
     if (!result.success) return { success: false, error: '入力内容に誤りがあります' }
 
     const validatedData = result.data
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const description = validatedData.description.trim() === '' ? null : validatedData.description
 
     const { data, error } = await supabase
@@ -78,7 +79,7 @@ export async function updateCertification(id: string, input: unknown): Promise<D
     if (!result.success) return { success: false, error: '入力内容に誤りがあります' }
 
     const validatedData = result.data
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const { error } = await supabase
       .from('certifications')
       .update({ name: validatedData.name, description: validatedData.description } as CertificationUpdate)
@@ -94,7 +95,7 @@ export async function updateCertification(id: string, input: unknown): Promise<D
 
 export async function deleteCertification(id: string): Promise<DatabaseResult> {
   try {
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const { count, error: countError } = await supabase
       .from('question_sets')
       .select('*', { count: 'exact', head: true })

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { questionSetFormSchema, updateQuestionSetSchema } from '@/lib/validations/question-set'
 import { handleSupabaseError } from '@/lib/errors'
 import type { Database } from '@/lib/types/database.types'
@@ -47,7 +48,7 @@ export async function createQuestionSet(input: unknown): Promise<DatabaseResult<
     if (!result.success) return { success: false, error: '入力内容に誤りがあります' }
 
     const validatedData = result.data
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const description = validatedData.description.trim() === '' ? null : validatedData.description
 
     const { data, error } = await supabase
@@ -78,7 +79,7 @@ export async function updateQuestionSet(id: string, input: unknown): Promise<Dat
     if (!result.success) return { success: false, error: '入力内容に誤りがあります' }
 
     const validatedData = result.data
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const { error } = await supabase
       .from('question_sets')
       .update({
@@ -99,7 +100,7 @@ export async function updateQuestionSet(id: string, input: unknown): Promise<Dat
 
 export async function toggleQuestionSetActive(id: string, is_active: boolean): Promise<DatabaseResult> {
   try {
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const { error } = await supabase
       .from('question_sets')
       .update({ is_active } as QuestionSetUpdate)
@@ -115,7 +116,7 @@ export async function toggleQuestionSetActive(id: string, is_active: boolean): P
 
 export async function deleteQuestionSet(id: string): Promise<DatabaseResult> {
   try {
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const { count, error: countError } = await supabase
       .from('questions')
       .select('*', { count: 'exact', head: true })
