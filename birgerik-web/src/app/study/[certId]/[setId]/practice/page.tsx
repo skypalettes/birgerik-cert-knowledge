@@ -1,7 +1,7 @@
 'use client'
 
 import { use, useEffect } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useStudyStore } from '@/store/study-store'
 import { getQuestions, getQuestionSetDetail } from '@/lib/api/client'
 import { QuestionDisplay } from '@/components/study/question-display'
@@ -14,9 +14,7 @@ type Props = { params: Promise<{ certId: string; setId: string }> }
 
 export default function PracticePage({ params }: Props) {
   const { certId, setId } = use(params)
-  const searchParams = useSearchParams()
   const router = useRouter()
-  const mode = (searchParams.get('mode') ?? 'sequential') as 'sequential' | 'random'
   const store = useStudyStore()
 
   useEffect(() => {
@@ -34,7 +32,7 @@ export default function PracticePage({ params }: Props) {
           questionSetName: question_set.name,
           certificationName: question_set.certification_name,
           questions,
-          mode,
+          mode: 'random',
         })
       }
     }
@@ -43,7 +41,7 @@ export default function PracticePage({ params }: Props) {
       cancelled = true
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setId, mode])
+  }, [setId])
 
   const question = store.getCurrentQuestion()
 
