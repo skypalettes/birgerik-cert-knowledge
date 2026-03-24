@@ -7,6 +7,7 @@ import {
   createQuestion as dbCreateQuestion,
   updateQuestion as dbUpdateQuestion,
   deleteQuestion as dbDeleteQuestion,
+  type GetQuestionsOptions,
 } from '@/lib/database/questions'
 import { getQuestionSetsForSelect as dbGetQuestionSetsForSelect } from '@/lib/database/question-sets'
 import { verifyAdminAccess } from '@/lib/auth/verify'
@@ -18,8 +19,8 @@ export type ActionResult<T = void> = {
   fieldErrors?: Record<string, string[]>
 }
 
-export async function getQuestions() {
-  return await dbGetQuestions()
+export async function getQuestions(options?: GetQuestionsOptions) {
+  return await dbGetQuestions(options)
 }
 
 export async function getQuestionSetsForSelect() {

@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Edit2, Trash2, LayoutList, Filter, Eye } from 'lucide-react'
+import { Plus, Edit2, Trash2, LayoutList, Filter, Eye, Search, ChevronLeft, ChevronRight } from 'lucide-react'
 import { QuestionFormModal } from '@/components/admin/questions/question-form-modal'
 import { DeleteConfirmationDialog } from '@/components/admin/questions/delete-confirmation-dialog'
 import { EmptyState } from '@/components/shared/ui/empty-state'
@@ -26,43 +26,84 @@ interface QuestionWithRelations {
 
 interface QuestionListProps {
   initialQuestions: QuestionWithRelations[]
+  totalCount: number
+  page: number
+  pageSize: number
   questionSets: QuestionSet[]
+  currentCertId: string
+  currentSetId: string
+  currentSearch: string
 }
 
-export function QuestionList({ initialQuestions, questionSets }: QuestionListProps) {
+export function QuestionList({
+  initialQuestions,
+  totalCount,
+  page,
+  pageSize,
+  questionSets,
+  currentCertId,
+  currentSetId,
+  currentSearch,
+}: QuestionListProps) {
   const router = useRouter()
-  const [selectedCertificationId, setSelectedCertificationId] = useState<string>('all')
-  const [selectedQuestionSetId, setSelectedQuestionSetId] = useState<string>('all')
+  const [isPending, startTransition] = useTransition()
+  const [searchInput, setSearchInput] = useState(currentSearch)
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [selectedQuestion, setSelectedQuestion] = useState<QuestionWithRelations | null>(null)
   const [expandedQuestionId, setExpandedQuestionId] = useState<string | null>(null)
 
+  const totalPages = Math.ceil(totalCount / pageSize)
+
+  const navigate = (params: { cert?: string; set?: string; q?: string; page?: number }) => {
+    const sp = new URLSearchParams()
+    const cert = params.cert ?? currentCertId
+    const set = params.set ?? currentSetId
+    const q = params.q ?? currentSearch
+    const p = params.page ?? 1
+    if (cert !== 'all') sp.set('cert', cert)
+    if (set !== 'all') sp.set('set', set)
+    if (q) sp.set('q', q)
+    if (p > 1) sp.set('page', String(p))
+    startTransition(() => router.push(`/admin/questions${sp.toString() ? '?' + sp.toString() : ''}`))
+  }
+
+  const handleCertChange = (certId: string) => {
+    navigate({ cert: certId, set: 'all', page: 1 })
+  }
+
+  const handleSetChange = (setId: string) => {
+    navigate({ set: setId, page: 1 })
+  }
+
+  const handleSearch = () => {
+    navigate({ q: searchInput, page: 1 })
+  }
+
+  const handleSearchKeyDown = (e: { key: string }) => {
+    if (e.key === 'Enter') handleSearch()
+  }
+
   const handleRefresh = () => router.refresh()
 
   const uniqueCertifications = Array.from(
     new Map(
-      questionSets.map(qs => qs.certification).filter((cert): cert is { id: string; name: string } => cert !== null).map(cert => [cert.id, cert])
+      questionSets
+        .map((qs) => qs.certification)
+        .filter((cert): cert is { id: string; name: string } => cert !== null)
+        .map((cert) => [cert.id, cert])
     ).values()
   )
 
-  const filteredQuestionSets = selectedCertificationId === 'all'
+  const filteredQuestionSets = currentCertId === 'all'
     ? questionSets
-    : questionSets.filter((qs) => qs.certification?.id === selectedCertificationId)
-
-  let filteredQuestions = initialQuestions
-  if (selectedCertificationId !== 'all') {
-    filteredQuestions = filteredQuestions.filter((q) => q.question_set?.certification?.id === selectedCertificationId)
-  }
-  if (selectedQuestionSetId !== 'all') {
-    filteredQuestions = filteredQuestions.filter((q) => q.question_set_id === selectedQuestionSetId)
-  }
+    : questionSets.filter((qs) => qs.certification?.id === currentCertId)
 
   const getCorrectChoices = (question: QuestionWithRelations): string[] =>
     question.choices?.filter((c) => c.is_correct).map((c) => c.choice_text) || []
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${isPending ? 'opacity-60 pointer-events-none' : ''} transition-opacity`}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -80,11 +121,11 @@ export function QuestionList({ initialQuestions, questionSets }: QuestionListPro
 
       {/* Filters */}
       <div className="flex items-center gap-3 flex-wrap">
-        <div className="text-sm text-gray-500 font-medium">全 {filteredQuestions.length} 件</div>
+        <div className="text-sm text-gray-500 font-medium">全 {totalCount} 件</div>
         <Filter className="h-4 w-4 text-teal-400" />
         <select
-          value={selectedCertificationId}
-          onChange={(e) => { setSelectedCertificationId(e.target.value); setSelectedQuestionSetId('all') }}
+          value={currentCertId}
+          onChange={(e) => handleCertChange(e.target.value)}
           className="text-sm border-2 border-gray-100 bg-white rounded-xl px-3 py-2 focus:ring-0 focus:border-teal-300 outline-none"
         >
           <option value="all">すべての資格</option>
@@ -93,8 +134,8 @@ export function QuestionList({ initialQuestions, questionSets }: QuestionListPro
           ))}
         </select>
         <select
-          value={selectedQuestionSetId}
-          onChange={(e) => setSelectedQuestionSetId(e.target.value)}
+          value={currentSetId}
+          onChange={(e) => handleSetChange(e.target.value)}
           className="text-sm border-2 border-gray-100 bg-white rounded-xl px-3 py-2 focus:ring-0 focus:border-teal-300 outline-none"
         >
           <option value="all">すべての問題集</option>
@@ -102,23 +143,53 @@ export function QuestionList({ initialQuestions, questionSets }: QuestionListPro
             <option key={qs.id} value={qs.id}>{qs.certification?.name} - {qs.name}</option>
           ))}
         </select>
+        {/* Search */}
+        <div className="flex items-center gap-1 border-2 border-gray-100 bg-white rounded-xl px-3 py-2 focus-within:border-teal-300 transition-colors">
+          <Search className="h-4 w-4 text-gray-400 shrink-0" />
+          <input
+            type="text"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onKeyDown={handleSearchKeyDown}
+            placeholder="問題文で検索..."
+            className="text-sm outline-none bg-transparent w-40 placeholder-gray-400"
+          />
+          {searchInput !== currentSearch && (
+            <button
+              onClick={handleSearch}
+              className="text-xs text-teal-500 font-bold hover:text-teal-700 ml-1"
+            >
+              検索
+            </button>
+          )}
+          {currentSearch && searchInput === currentSearch && (
+            <button
+              onClick={() => { setSearchInput(''); navigate({ q: '', page: 1 }) }}
+              className="text-xs text-gray-400 hover:text-gray-600 ml-1"
+            >
+              ✕
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Content */}
-      {filteredQuestions.length === 0 ? (
+      {initialQuestions.length === 0 ? (
         <div className="bg-white border-2 border-teal-50 rounded-2xl shadow-sm">
           <EmptyState
             icon={<LayoutList className="h-8 w-8" />}
-            title={selectedQuestionSetId === 'all' ? '問題がありません' : 'この問題集の問題がありません'}
-            description="新しい問題を追加して始めましょう"
+            title={currentSearch ? '検索結果がありません' : currentSetId === 'all' ? '問題がありません' : 'この問題集の問題がありません'}
+            description={currentSearch ? '別のキーワードで検索してみてください' : '新しい問題を追加して始めましょう'}
             action={
-              <button
-                onClick={() => { setSelectedQuestion(null); setIsFormModalOpen(true) }}
-                className="flex items-center gap-2 bg-teal-500 text-white px-5 py-2.5 rounded-full text-sm font-bold hover:bg-teal-600 transition-all"
-              >
-                <Plus className="w-4 h-4" />
-                問題を追加
-              </button>
+              !currentSearch ? (
+                <button
+                  onClick={() => { setSelectedQuestion(null); setIsFormModalOpen(true) }}
+                  className="flex items-center gap-2 bg-teal-500 text-white px-5 py-2.5 rounded-full text-sm font-bold hover:bg-teal-600 transition-all"
+                >
+                  <Plus className="w-4 h-4" />
+                  問題を追加
+                </button>
+              ) : undefined
             }
           />
         </div>
@@ -135,7 +206,7 @@ export function QuestionList({ initialQuestions, questionSets }: QuestionListPro
               </tr>
             </thead>
             <tbody className="divide-y divide-teal-50">
-              {filteredQuestions.map((question) => {
+              {initialQuestions.map((question) => {
                 const correctChoices = getCorrectChoices(question)
                 const isExpanded = expandedQuestionId === question.id
                 const questionPreview = getTextPreview(question.question_text, 80)
@@ -199,6 +270,32 @@ export function QuestionList({ initialQuestions, questionSets }: QuestionListPro
               })}
             </tbody>
           </table>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-6 py-4 border-t-2 border-teal-50">
+              <span className="text-xs text-gray-400">
+                {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, totalCount)} / {totalCount} 件
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  disabled={page <= 1}
+                  onClick={() => navigate({ page: page - 1 })}
+                  className="p-1.5 rounded-lg text-teal-500 hover:bg-teal-50 disabled:text-gray-200 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <span className="text-xs font-medium text-gray-600">{page} / {totalPages}</span>
+                <button
+                  disabled={page >= totalPages}
+                  onClick={() => navigate({ page: page + 1 })}
+                  className="p-1.5 rounded-lg text-teal-500 hover:bg-teal-50 disabled:text-gray-200 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -208,8 +305,8 @@ export function QuestionList({ initialQuestions, questionSets }: QuestionListPro
         onSuccess={handleRefresh}
         question={selectedQuestion}
         questionSets={questionSets}
-        defaultCertificationId={selectedCertificationId !== 'all' ? selectedCertificationId : undefined}
-        defaultQuestionSetId={selectedQuestionSetId !== 'all' ? selectedQuestionSetId : undefined}
+        defaultCertificationId={currentCertId !== 'all' ? currentCertId : undefined}
+        defaultQuestionSetId={currentSetId !== 'all' ? currentSetId : undefined}
       />
 
       <DeleteConfirmationDialog

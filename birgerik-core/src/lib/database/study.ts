@@ -17,53 +17,31 @@ export async function getCertificationsWithQuestionSets(): Promise<{
       .from('certifications')
       .select(`
         id, name, description,
-        question_sets (id, name, description, is_active)
+        question_sets (
+          id, name, description, is_active,
+          questions (count),
+          exams (count)
+        )
       `)
       .order('name')
 
     if (certError) throw certError
     if (!certsWithSets || certsWithSets.length === 0) return { data: [], error: null }
 
-    // is_active = true の問題集のみ
-    const activeCerts = certsWithSets.map((cert: any) => ({
-      ...cert,
-      question_sets: (cert.question_sets || []).filter((qs: any) => qs.is_active),
-    })).filter((cert) => cert.question_sets.length > 0)
-
-    const allQuestionSetIds = activeCerts.flatMap(
-      (cert: any) => cert.question_sets?.map((qs: any) => qs.id) || []
-    )
-
-    if (allQuestionSetIds.length === 0) return { data: [], error: null }
-
-    const [questionCountsResult, examSetsResult] = await Promise.all([
-      supabase.from('questions').select('question_set_id').in('question_set_id', allQuestionSetIds),
-      supabase.from('exams').select('question_set_id').in('question_set_id', allQuestionSetIds),
-    ])
-
-    if (questionCountsResult.error) throw questionCountsResult.error
-    if (examSetsResult.error) throw examSetsResult.error
-
-    const countMap = new Map<string, number>()
-    questionCountsResult.data?.forEach((q: any) => {
-      countMap.set(q.question_set_id, (countMap.get(q.question_set_id) || 0) + 1)
-    })
-
-    const examSetIds = new Set((examSetsResult.data || []).map((e: any) => e.question_set_id))
-
-    const certificationsWithSets: CertificationWithQuestionSets[] = activeCerts
-      .map((cert: any) => ({
+    const certificationsWithSets: CertificationWithQuestionSets[] = (certsWithSets as any[])
+      .map((cert) => ({
         id: cert.id,
         name: cert.name,
         description: cert.description,
         question_sets: (cert.question_sets || [])
+          .filter((qs: any) => qs.is_active)
           .map((qs: any) => ({
             id: qs.id,
             name: qs.name,
             description: qs.description,
-            question_count: countMap.get(qs.id) || 0,
+            question_count: qs.questions?.[0]?.count || 0,
             is_active: qs.is_active,
-            has_exam: examSetIds.has(qs.id),
+            has_exam: (qs.exams?.[0]?.count || 0) > 0,
           }))
           .sort((a: any, b: any) => a.name.localeCompare(b.name)),
       }))

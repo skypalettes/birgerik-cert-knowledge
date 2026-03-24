@@ -6,7 +6,7 @@ import { getQuestions, createQuestion } from '@/lib/database/questions'
 export const GET = withAuth(async (request: NextRequest) => {
   const { searchParams } = new URL(request.url)
   const questionSetId = searchParams.get('question_set_id')
-  const questions = await getQuestions(questionSetId)
+  const { data: questions } = await getQuestions(questionSetId ? { questionSetIds: [questionSetId] } : undefined)
   return successResponse({ questions }) as NextResponse
 })
 

@@ -10,31 +10,61 @@ type QuestionInsert = Database['public']['Tables']['questions']['Insert']
 type QuestionUpdate = Database['public']['Tables']['questions']['Update']
 type ChoiceInsert = Database['public']['Tables']['choices']['Insert']
 
-export async function getQuestions(questionSetId?: string | null) {
+const PAGE_SIZE = 50
+
+export interface GetQuestionsOptions {
+  questionSetIds?: string[] | null
+  searchText?: string | null
+  page?: number
+  pageSize?: number
+}
+
+export async function getQuestions(options?: GetQuestionsOptions) {
+  const { questionSetIds, searchText, page = 1, pageSize = PAGE_SIZE } = options || {}
+
+  if (questionSetIds && questionSetIds.length === 0) {
+    return { data: [], count: 0, page, pageSize }
+  }
+
   const supabase = await createClient()
+  const from = (page - 1) * pageSize
+  const to = from + pageSize - 1
+
   let query = supabase
     .from('questions')
     .select(`
-      *,
+      id, question_text, explanation, is_multiple_choice, order_index, created_at, updated_at, question_set_id,
       question_set:question_sets (
         id,
         name,
         certification:certifications (id, name)
       ),
       choices (id, choice_text, is_correct, order_index)
-    `)
+    `, { count: 'exact' })
 
-  if (questionSetId) {
-    query = query.eq('question_set_id', questionSetId)
+  if (questionSetIds && questionSetIds.length > 0) {
+    query = query.in('question_set_id', questionSetIds)
   }
 
-  const { data, error } = await query.order('created_at', { ascending: false })
+  if (searchText && searchText.trim()) {
+    query = query.ilike('question_text', `%${searchText.trim()}%`)
+  }
+
+  const { data, error, count } = await query
+    .order('created_at', { ascending: false })
+    .range(from, to)
+
   if (error) throw handleSupabaseError(error)
 
-  return data.map((question) => ({
-    ...question,
-    choices: question.choices?.sort((a, b) => (a.order_index || 0) - (b.order_index || 0)),
-  }))
+  return {
+    data: data.map((question) => ({
+      ...question,
+      choices: question.choices?.sort((a, b) => (a.order_index || 0) - (b.order_index || 0)),
+    })),
+    count: count || 0,
+    page,
+    pageSize,
+  }
 }
 
 export async function getQuestion(id: string) {
