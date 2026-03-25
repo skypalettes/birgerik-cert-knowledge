@@ -74,7 +74,7 @@ export default function ExamSessionPage({ params }: Props) {
 
       <div className="flex flex-1 max-w-6xl mx-auto w-full px-4 py-6 gap-6">
         {/* メインエリア */}
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           {question && (
             <>
               <ExamQuestionDisplay

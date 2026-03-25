@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useEffect } from 'react'
+import { use, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useStudyStore } from '@/store/study-store'
 import { getQuestions, getQuestionSetDetail } from '@/lib/api/client'
@@ -16,10 +16,12 @@ export default function PracticePage({ params }: Props) {
   const { certId, setId } = use(params)
   const router = useRouter()
   const store = useStudyStore()
+  const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
     if (store.isSessionActive && store.questionSetId === setId) return
 
+    setIsLoading(true)
     let cancelled = false
     const init = async () => {
       const [{ question_set }, { questions }] = await Promise.all([
@@ -34,6 +36,7 @@ export default function PracticePage({ params }: Props) {
           questions,
           mode: 'random',
         })
+        setIsLoading(false)
       }
     }
     init()
@@ -44,8 +47,9 @@ export default function PracticePage({ params }: Props) {
   }, [setId])
 
   const question = store.getCurrentQuestion()
+  const isWrongSession = store.isSessionActive && store.questionSetId !== setId
 
-  if (!question) {
+  if (isLoading || isWrongSession || !question) {
     return (
       <div className="flex items-center justify-center h-64 text-gray-500">
         読み込み中...

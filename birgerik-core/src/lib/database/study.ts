@@ -13,20 +13,28 @@ export async function getCertificationsWithQuestionSets(): Promise<{
   try {
     const supabase = await createClient()
 
-    const { data: certsWithSets, error: certError } = await supabase
-      .from('certifications')
-      .select(`
-        id, name, description,
-        question_sets (
-          id, name, description, is_active,
-          questions (count),
-          exams (count)
-        )
-      `)
-      .order('name')
+    const [{ data: certsWithSets, error: certError }, { data: examsData }] = await Promise.all([
+      supabase
+        .from('certifications')
+        .select(`
+          id, name, description,
+          question_sets (
+            id, name, description, is_active,
+            questions (count)
+          )
+        `)
+        .order('name'),
+      supabase
+        .from('exams')
+        .select('question_set_id'),
+    ])
 
     if (certError) throw certError
     if (!certsWithSets || certsWithSets.length === 0) return { data: [], error: null }
+
+    const questionSetIdsWithExam = new Set(
+      (examsData || []).map((e: any) => e.question_set_id)
+    )
 
     const certificationsWithSets: CertificationWithQuestionSets[] = (certsWithSets as any[])
       .map((cert) => ({
@@ -41,7 +49,7 @@ export async function getCertificationsWithQuestionSets(): Promise<{
             description: qs.description,
             question_count: qs.questions?.[0]?.count || 0,
             is_active: qs.is_active,
-            has_exam: (qs.exams?.[0]?.count || 0) > 0,
+            has_exam: questionSetIdsWithExam.has(qs.id),
           }))
           .sort((a: any, b: any) => a.name.localeCompare(b.name)),
       }))
