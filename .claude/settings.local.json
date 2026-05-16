@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Bash(pnpm install *)",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(pnpm lint *)",
+      "Bash(pnpm tsx *)",
+      "Bash(npm install *)",
+      "Bash(QUESTIONS_DIR=./_test_fixture npm run sync:dry-run)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(mkdir -p _sync_test_fixture/AWS/SAA)",
+      "Bash(cat)",
+      "Bash(QUESTIONS_DIR=./_sync_test_fixture npm run sync:dry-run --prefix birgerik-question-data)",
+      "Bash(QUESTIONS_DIR=../_sync_test_fixture npx tsx scripts/sync.ts --dry-run)",
+      "Bash(git add *)",
+      "Bash(git -c user.email=test@test.local -c user.name=test commit -m \"test: add+modify\" --no-gpg-sign --no-verify)",
+      "Bash(QUESTIONS_DIR=../_sync_test_fixture SYNC_BEFORE_SHA=db9534da35611b5dac5196bfc65064379307a39d SYNC_AFTER_SHA=HEAD npx tsx scripts/sync.ts --changed-only --dry-run)",
+      "Bash(QUESTIONS_DIR=../_sync_test_fixture SYNC_BEFORE_SHA=4b3ed753412e44b3b97164f90482b468a483913d SYNC_AFTER_SHA=HEAD npx tsx scripts/sync.ts --changed-only --dry-run)",
+      "Bash(QUESTIONS_DIR=../_sync_test_fixture SYNC_BEFORE_SHA=4b3ed753412e44b3b97164f90482b468a483913d SYNC_AFTER_SHA=HEAD npx tsx scripts/sync.ts --changed-only --force-delete --dry-run)"
+    ]
+  }
+}

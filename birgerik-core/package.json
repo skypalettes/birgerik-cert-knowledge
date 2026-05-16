@@ -8,8 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "types:generate": "npx supabase gen types typescript --project-id <project-id> > src/lib/types/database.types.ts",
-    "create-user": "tsx scripts/create-user.ts",
-    "manage-user": "tsx scripts/manage-user.ts"
+    "export-questions": "tsx scripts/export-questions.ts"
   },
   "dependencies": {
     "@birgerik/types": "workspace:*",
