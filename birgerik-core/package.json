@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "types:generate": "npx supabase gen types typescript --project-id <project-id> > src/lib/types/database.types.ts",
-    "export-questions": "tsx scripts/export-questions.ts"
+    "export-questions": "tsx scripts/export-questions.ts",
+    "sync-questions": "tsx scripts/sync.ts"
   },
   "dependencies": {
     "@birgerik/types": "workspace:*",
@@ -51,6 +52,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.5.6",
+    "gray-matter": "^4.0.3",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
     "typescript": "^5"
