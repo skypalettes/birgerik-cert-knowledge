@@ -48,7 +48,13 @@ jobs:
           path: core
           token: ${{ secrets.CORE_REPO_TOKEN }} # public 化したらこの行は削除可
 
+      # monorepo を core/ にチェックアウトしているため
+      # ワークスペースルートに package.json が無く、action-setup が
+      # pnpm バージョンを解決できない。lockfileVersion 9.0 = pnpm v9
+      # に合わせて明示指定する。
       - uses: pnpm/action-setup@v4
+        with:
+          version: 9
 
       - uses: actions/setup-node@v4
         with:
