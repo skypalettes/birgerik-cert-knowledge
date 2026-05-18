@@ -278,7 +278,15 @@ async function detectChanges(
     }
   }
 
-  return { changed, deletedIds }
+  // 同一 UUID が「変更」と「削除」の両方に現れるケース
+  // （資格 / 問題集フォルダ間の移動。ファイル名 = question id のため
+  //  git は rename として検知する）は、問題自体は存在し続ける。
+  // --force-delete 時に upsert 直後へ delete が走り消失するのを防ぐため、
+  // upsert 対象になっている UUID は削除候補から除外する。
+  const changedIds = new Set(changed.map((p) => basename(p, '.md')))
+  const filteredDeletedIds = deletedIds.filter((id) => !changedIds.has(id))
+
+  return { changed, deletedIds: filteredDeletedIds }
 }
 
 // ============================================================
@@ -402,9 +410,15 @@ async function main() {
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!supabaseUrl || !supabaseServiceKey) {
+  const hasCredentials = !!supabaseUrl && !!supabaseServiceKey
+  if (!hasCredentials && !options.dryRun) {
     throw new Error(
       'NEXT_PUBLIC_SUPABASE_URL と SUPABASE_SERVICE_ROLE_KEY を設定してください'
+    )
+  }
+  if (!hasCredentials && options.dryRun) {
+    console.warn(
+      'Supabase 認証情報が未設定ですが、--dry-run のため DB 接続なしで続行します。'
     )
   }
 
@@ -449,7 +463,10 @@ async function main() {
   }
   console.log('')
 
-  const supabase = createClient<Database>(supabaseUrl, supabaseServiceKey)
+  const supabase = createClient<Database>(
+    supabaseUrl || 'http://localhost',
+    supabaseServiceKey || 'dry-run-placeholder'
+  )
 
   const summary: Summary = {
     upserted: 0,

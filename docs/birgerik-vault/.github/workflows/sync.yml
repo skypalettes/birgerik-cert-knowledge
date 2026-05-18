@@ -1,14 +1,14 @@
 # ============================================================
-# このファイルは birgerik-question-data リポジトリ用のテンプレートです。
+# このファイルは birgerik-vault リポジトリ用のテンプレートです。
 #
-# 配置先: birgerik-question-data リポジトリの
+# 配置先: birgerik-vault リポジトリの
 #         .github/workflows/sync.yml
 #
 # このリポジトリ (birgerik-cert-knowledge) には .github/workflows/
 # ではなく docs/ 配下に置いているため、ここでは実行されません。
-# birgerik-question-data 側へコピーして使用してください。
+# birgerik-vault 側へコピーして使用してください。
 #
-# 必要な Secrets (birgerik-question-data リポジトリに設定):
+# 必要な Secrets (birgerik-vault リポジトリに設定):
 #   - NEXT_PUBLIC_SUPABASE_URL
 #   - SUPABASE_SERVICE_ROLE_KEY
 #   - CORE_REPO_TOKEN  (irunahub/birgerik-cert-knowledge が private の
