@@ -16,7 +16,7 @@ export default function ExamResultPage({ params }: Props) {
   if (!result) {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-4">
-        <p className="text-gray-500">試験結果が見つかりません</p>
+        <p className="text-slate-400 font-mono">試験結果が見つかりません</p>
         <Link href="/exam">
           <Button variant="secondary">試験選択へ</Button>
         </Link>
@@ -28,44 +28,44 @@ export default function ExamResultPage({ params }: Props) {
   const durationSec = Math.floor((result.duration % 60000) / 1000)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-50 to-blue-50 py-12">
+    <div className="py-12">
       <div className="max-w-2xl mx-auto px-4">
         {/* 合否バナー */}
         <div
-          className={`rounded-2xl p-8 text-center mb-8 ${
-            result.passed ? 'bg-emerald-50 border-2 border-emerald-100' : 'bg-red-50 border-2 border-red-100'
+          className={`glass-panel cyber-corners rounded-xl p-8 text-center mb-8 ${
+            result.passed ? 'border-emerald-500/60 shadow-neon-emerald' : 'border-red-500/60'
           }`}
         >
           <div className="text-6xl mb-3">{result.passed ? '🎉' : '😢'}</div>
           <div
-            className={`text-4xl font-black mb-1 ${
-              result.passed ? 'text-emerald-600' : 'text-red-600'
+            className={`text-4xl font-mono font-black mb-1 tracking-wide ${
+              result.passed ? 'text-emerald-400' : 'text-red-400'
             }`}
           >
-            {result.passed ? '合格' : '不合格'}
+            {result.passed ? 'PASSED' : 'FAILED'}
           </div>
-          <div className="text-gray-500">
+          <div className="text-slate-400 font-mono text-sm">
             {result.accuracy}% / 合格ライン {result.passingScore}%
           </div>
         </div>
 
         {/* スコア詳細 */}
         <div className="grid grid-cols-3 gap-4 mb-8">
-          <div className="bg-white border-2 border-teal-50 rounded-xl p-4 text-center shadow-sm">
-            <div className="text-3xl font-bold text-blue-600">{result.accuracy}%</div>
-            <div className="text-sm text-gray-500 mt-1">正答率</div>
+          <div className="glass-panel rounded-xl p-4 text-center">
+            <div className="text-3xl font-mono font-bold text-cyan-300">{result.accuracy}%</div>
+            <div className="text-xs text-slate-400 mt-1 font-mono tracking-wide">ACCURACY</div>
           </div>
-          <div className="bg-white border-2 border-teal-50 rounded-xl p-4 text-center shadow-sm">
-            <div className="text-3xl font-bold text-gray-800">
+          <div className="glass-panel rounded-xl p-4 text-center">
+            <div className="text-3xl font-mono font-bold text-emerald-400">
               {result.correctCount}/{result.totalQuestions}
             </div>
-            <div className="text-sm text-gray-500 mt-1">正解数</div>
+            <div className="text-xs text-slate-400 mt-1 font-mono tracking-wide">CORRECT</div>
           </div>
-          <div className="bg-white border-2 border-teal-50 rounded-xl p-4 text-center shadow-sm">
-            <div className="text-3xl font-bold text-gray-800">
+          <div className="glass-panel rounded-xl p-4 text-center">
+            <div className="text-3xl font-mono font-bold text-fuchsia-400">
               {durationMin}:{String(durationSec).padStart(2, '0')}
             </div>
-            <div className="text-sm text-gray-500 mt-1">所要時間</div>
+            <div className="text-xs text-slate-400 mt-1 font-mono tracking-wide">TIME</div>
           </div>
         </div>
 

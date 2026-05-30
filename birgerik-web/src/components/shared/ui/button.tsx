@@ -22,18 +22,18 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const baseStyles =
-      'inline-flex items-center justify-center font-bold rounded-full transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50'
+      'inline-flex items-center justify-center font-mono font-bold rounded transition-all duration-300 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50'
 
     const variantStyles = {
       primary:
-        'bg-teal-500 text-white hover:bg-teal-600 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-teal-200 focus-visible:ring-teal-400',
+        'bg-cyan-900/40 text-cyan-300 border border-cyan-500 hover:bg-cyan-500 hover:text-cyber-bg hover:shadow-neon-cyan',
       secondary:
-        'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:text-gray-900 focus-visible:ring-gray-400',
+        'bg-slate-800/60 text-slate-200 border border-slate-600 hover:border-slate-400 hover:bg-slate-700/60',
       outline:
-        'border-2 border-teal-200 bg-transparent text-teal-600 hover:bg-teal-50 focus-visible:ring-teal-400',
+        'border border-cyan-700 bg-transparent text-cyan-400 hover:bg-cyan-900/30 hover:border-cyan-500',
       danger:
-        'bg-red-500 text-white hover:bg-red-600 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-red-200 focus-visible:ring-red-400',
-      ghost: 'bg-transparent hover:bg-teal-50 text-gray-500 hover:text-teal-600 focus-visible:ring-teal-400',
+        'bg-red-900/40 text-red-300 border border-red-500 hover:bg-red-500 hover:text-white hover:shadow-[0_0_15px_rgba(239,68,68,0.4)]',
+      ghost: 'bg-transparent text-slate-400 hover:text-cyan-300 hover:bg-cyan-900/20',
     }
 
     const sizeStyles = {

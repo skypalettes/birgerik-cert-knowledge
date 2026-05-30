@@ -1,7 +1,8 @@
 export const dynamic = 'force-dynamic'
 
 import { getCertifications } from '@/lib/api/client'
-import { CertificationCard } from '@/components/study/certification-card'
+import { VendorSection } from '@/components/study/vendor-section'
+import { groupByVendor } from '@/lib/utils/vendor'
 import { EmptyState } from '@/components/shared/ui/empty-state'
 import { BookOpen } from 'lucide-react'
 
@@ -10,7 +11,7 @@ export default async function StudyPage() {
 
   if (certifications.length === 0) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-5xl mx-auto px-4 py-8">
         <EmptyState
           icon={<BookOpen className="h-8 w-8" />}
           title="資格がありません"
@@ -20,15 +21,20 @@ export default async function StudyPage() {
     )
   }
 
+  const groups = groupByVendor(certifications)
+
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-2 text-gray-800">学習する資格を選択</h1>
-      <p className="text-gray-500 mb-8">取り組みたい資格・カテゴリを選んでください</p>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {certifications.map((cert) => (
-          <CertificationCard key={cert.id} certification={cert} />
-        ))}
+    <div className="max-w-5xl mx-auto w-full px-4 py-12">
+      <div className="mb-12 border-l-4 border-cyan-400 pl-6">
+        <h1 className="text-4xl font-serif font-bold text-slate-100 mb-2">知識の書庫へようこそ</h1>
+        <p className="text-cyan-400 font-mono text-sm tracking-wide">
+          Select a grimoire to synchronize your brain.
+        </p>
       </div>
+
+      {groups.map((group) => (
+        <VendorSection key={group.vendor.key} group={group} />
+      ))}
     </div>
   )
 }

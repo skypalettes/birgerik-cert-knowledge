@@ -37,7 +37,7 @@ export default function ExamSessionPage({ params }: Props) {
   if (!store.isSessionActive) {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-4">
-        <p className="text-gray-500">試験セッションが見つかりません</p>
+        <p className="text-slate-400 font-mono">試験セッションが見つかりません</p>
         <Button variant="secondary" onClick={() => router.push('/exam')}>
           試験選択に戻る
         </Button>
@@ -61,11 +61,11 @@ export default function ExamSessionPage({ params }: Props) {
   return (
     <div className="min-h-screen flex flex-col">
       {/* ヘッダー: タイマー + 進捗 + 終了ボタン */}
-      <div className="sticky top-0 z-50 bg-white border-b px-4 py-3 flex items-center justify-between shadow-sm">
+      <div className="sticky top-0 z-50 glass-panel border-b border-cyan-500/30 px-4 py-3 flex items-center justify-between">
         <ExamTimer seconds={store.timeRemaining} />
-        <span className="text-sm text-gray-500 font-medium">
-          {progress.current} / {progress.total} 問
-          <span className="ml-2 text-blue-600">（回答済 {progress.answeredCount}問）</span>
+        <span className="text-sm text-slate-400 font-mono">
+          {progress.current} / {progress.total}
+          <span className="ml-2 text-cyan-400">（回答済 {progress.answeredCount}）</span>
         </span>
         <Button variant="danger" size="sm" onClick={handleFinish}>
           終了する
@@ -81,12 +81,13 @@ export default function ExamSessionPage({ params }: Props) {
                 question={question}
                 currentIndex={store.currentIndex}
               />
-              <div className="space-y-3 my-6">
+              <div className="space-y-4 my-8">
                 {question.choices.map((choice) => (
                   <ExamChoiceOption
                     key={choice.id}
                     choice={choice}
                     isSelected={store.selectedChoiceIds.includes(choice.id)}
+                    isMultiple={question.is_multiple_choice}
                     onToggle={() =>
                       store.toggleChoice(choice.id, question.is_multiple_choice)
                     }

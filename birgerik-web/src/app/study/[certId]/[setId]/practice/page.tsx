@@ -2,6 +2,7 @@
 
 import { use, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useStudyStore } from '@/store/study-store'
 import { getQuestions, getQuestionSetDetail } from '@/lib/api/client'
 import { QuestionDisplay } from '@/components/study/question-display'
@@ -9,6 +10,7 @@ import { ChoiceOption } from '@/components/study/choice-option'
 import { AnswerFeedback } from '@/components/study/answer-feedback'
 import { StudyProgress } from '@/components/study/study-progress'
 import { StudyNavigation } from '@/components/study/study-navigation'
+import { MagicLoader } from '@/components/shared/magic-loader'
 
 type Props = { params: Promise<{ certId: string; setId: string }> }
 
@@ -34,7 +36,6 @@ export default function PracticePage({ params }: Props) {
           questionSetName: question_set.name,
           certificationName: question_set.certification_name,
           questions,
-          mode: 'random',
         })
         setIsLoading(false)
       }
@@ -43,18 +44,14 @@ export default function PracticePage({ params }: Props) {
     return () => {
       cancelled = true
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setId])
 
   const question = store.getCurrentQuestion()
   const isWrongSession = store.isSessionActive && store.questionSetId !== setId
 
   if (isLoading || isWrongSession || !question) {
-    return (
-      <div className="flex items-center justify-center h-64 text-gray-500">
-        読み込み中...
-      </div>
-    )
+    return <MagicLoader />
   }
 
   const handleFinish = () => {
@@ -62,32 +59,53 @@ export default function PracticePage({ params }: Props) {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6">
+    <div className="max-w-3xl mx-auto px-4 py-8">
       <StudyProgress
         current={store.getProgress().current}
         total={store.getProgress().total}
         score={store.getScore()}
+        questionSetName={store.questionSetName}
       />
-      <QuestionDisplay question={question} index={store.currentIndex} />
-      <div className="space-y-3 my-6">
-        {question.choices.map((choice) => (
-          <ChoiceOption
-            key={choice.id}
-            choice={choice}
-            isSelected={store.selectedChoiceIds.includes(choice.id)}
-            isSubmitted={store.isAnswerSubmitted}
-            onToggle={() => store.toggleChoice(choice.id, question.is_multiple_choice)}
-          />
-        ))}
-      </div>
+
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={store.currentIndex}
+          initial={{ opacity: 0, x: 24 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -24 }}
+          transition={{ duration: 0.25 }}
+        >
+          <QuestionDisplay question={question} index={store.currentIndex} />
+          <div className="space-y-4 my-8">
+            {question.choices.map((choice) => (
+              <ChoiceOption
+                key={choice.id}
+                choice={choice}
+                isSelected={store.selectedChoiceIds.includes(choice.id)}
+                isSubmitted={store.isAnswerSubmitted}
+                isMultiple={question.is_multiple_choice}
+                onToggle={() => store.toggleChoice(choice.id, question.is_multiple_choice)}
+              />
+            ))}
+          </div>
+        </motion.div>
+      </AnimatePresence>
+
       {store.isAnswerSubmitted && (
-        <AnswerFeedback
-          isCorrect={store.answerHistory.at(-1)?.isCorrect ?? false}
-          explanation={question.explanation}
-          showExplanation={store.showExplanation}
-          onToggleExplanation={store.toggleExplanation}
-        />
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <AnswerFeedback
+            isCorrect={store.answerHistory.at(-1)?.isCorrect ?? false}
+            explanation={question.explanation}
+            showExplanation={store.showExplanation}
+            onToggleExplanation={store.toggleExplanation}
+          />
+        </motion.div>
       )}
+
       <StudyNavigation
         isFirst={store.isFirstQuestion()}
         isLast={store.isLastQuestion()}

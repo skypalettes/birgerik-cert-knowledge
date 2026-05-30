@@ -6,15 +6,19 @@ export function ProgressCircle({ percentage, size = 120 }: Props) {
   const offset = circumference - (percentage / 100) * circumference
 
   const strokeColor =
-    percentage >= 80 ? '#22c55e' : percentage >= 60 ? '#3b82f6' : '#ef4444'
+    percentage >= 80 ? '#10b981' : percentage >= 60 ? '#00ffff' : '#ff00ff'
 
   return (
-    <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+    <svg
+      width={size}
+      height={size}
+      style={{ transform: 'rotate(-90deg)', filter: `drop-shadow(0 0 6px ${strokeColor})` }}
+    >
       <circle
         cx={size / 2}
         cy={size / 2}
         r={radius}
-        stroke="#e5e7eb"
+        stroke="#1e293b"
         strokeWidth={8}
         fill="none"
       />
@@ -35,9 +39,10 @@ export function ProgressCircle({ percentage, size = 120 }: Props) {
         y="50%"
         textAnchor="middle"
         dominantBaseline="middle"
-        fill="#111"
+        fill="#e2e8f0"
         fontSize={24}
         fontWeight="bold"
+        fontFamily="var(--font-mono)"
         style={{ transform: 'rotate(90deg)', transformOrigin: 'center' }}
       >
         {percentage}%

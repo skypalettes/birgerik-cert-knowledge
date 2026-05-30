@@ -1,8 +1,8 @@
+'use client'
+
 import type { QuestionSetSummary } from '@birgerik/types'
-import { Card } from '../shared/ui/card'
-import { Badge } from '../shared/ui/badge'
-import { ClipboardList, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
+import { motion } from 'framer-motion'
 
 interface ExamCardProps {
   questionSet: QuestionSetSummary & { certificationName: string }
@@ -10,21 +10,31 @@ interface ExamCardProps {
 
 export function ExamCard({ questionSet }: ExamCardProps) {
   return (
-    <Link href={`/exam/${questionSet.id}/confirm`}>
-      <Card className="p-6 hover:shadow-md hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
-        <div className="flex items-start justify-between mb-3">
-          <div className="p-2 bg-amber-50 rounded-xl">
-            <ClipboardList className="h-6 w-6 text-amber-500" />
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <Link
+        href={`/exam/${questionSet.id}/confirm`}
+        className="block text-left glass-panel rounded-xl p-6 transition-all hover:-translate-y-2 hover:shadow-neon-magenta group relative overflow-hidden h-full"
+      >
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-fuchsia-400 to-transparent -translate-x-full group-hover:translate-x-0 transition-transform duration-500" />
+        <div className="flex justify-between items-start mb-3 gap-3">
+          <div>
+            <div className="text-xs text-fuchsia-500 font-mono mb-1">{questionSet.certificationName}</div>
+            <h2 className="font-bold text-lg text-slate-100 group-hover:text-fuchsia-300 transition-colors font-serif">
+              {questionSet.name}
+            </h2>
           </div>
-          <ChevronRight className="h-5 w-5 text-gray-300 group-hover:text-teal-400 transition-colors" />
+          <span className="font-mono text-xs text-fuchsia-300 bg-fuchsia-950/50 border border-fuchsia-800 px-2 py-1 rounded whitespace-nowrap shrink-0">
+            {questionSet.question_count} Qs
+          </span>
         </div>
-        <div className="text-xs text-gray-400 mb-1">{questionSet.certificationName}</div>
-        <h2 className="font-bold text-lg mb-1 text-gray-800">{questionSet.name}</h2>
         {questionSet.description && (
-          <p className="text-sm text-gray-500 mb-3 line-clamp-2">{questionSet.description}</p>
+          <p className="text-sm text-slate-400 line-clamp-2 font-serif">{questionSet.description}</p>
         )}
-        <Badge variant="teal">{questionSet.question_count} 問</Badge>
-      </Card>
-    </Link>
+      </Link>
+    </motion.div>
   )
 }
