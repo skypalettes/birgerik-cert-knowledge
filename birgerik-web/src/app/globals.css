@@ -1,55 +1,247 @@
 @import "tailwindcss";
 
+/* ============================================================
+   Cyber Magic Library — テーマトークン (Tailwind v4 @theme)
+   ============================================================ */
+@theme {
+  /* フォント */
+  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+  --font-serif: var(--font-noto-serif-jp), serif;
+  --font-mono: var(--font-fira-code), ui-monospace, monospace;
+
+  /* サイバーカラー */
+  --color-cyber-bg: #050b14;
+  --color-cyber-panel: rgba(13, 25, 48, 0.7);
+  --color-cyber-cyan: #00ffff;
+  --color-cyber-magenta: #ff00ff;
+  --color-cyber-emerald: #10b981;
+
+  /* ネオンシャドウ */
+  --shadow-neon-cyan: 0 0 15px rgba(0, 255, 255, 0.4), inset 0 0 10px rgba(0, 255, 255, 0.1);
+  --shadow-neon-magenta: 0 0 15px rgba(255, 0, 255, 0.4), inset 0 0 10px rgba(255, 0, 255, 0.1);
+  --shadow-neon-emerald: 0 0 15px rgba(16, 185, 129, 0.4), inset 0 0 10px rgba(16, 185, 129, 0.1);
+}
+
 :root {
-  --background: #f0fdfa;
-  --foreground: #0f172a;
+  --background: #050b14;
+  --foreground: #e2e8f0;
 }
 
 html {
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
+  overflow-x: hidden;
 }
 
-/* Teal scrollbar */
+/* ============================================================
+   グラフィカル背景レイヤー
+   ============================================================ */
+/* 1. サイバーグリッド */
+.bg-grid {
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
+  z-index: -3;
+  transform: perspective(500px) rotateX(60deg) translateY(-100px) scale(3);
+  transform-origin: top;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* 2. 背景の巨大魔法陣 */
+.bg-magic-circle {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 120vw;
+  height: 120vw;
+  max-width: 1000px;
+  max-height: 1000px;
+  transform: translate(-50%, -50%);
+  opacity: 0.03;
+  z-index: -2;
+  animation: slow-spin 60s linear infinite;
+  pointer-events: none;
+}
+
+/* 3. サイバースキャンライン */
+.scanline {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(to bottom, transparent, rgba(0, 255, 255, 0.5), transparent);
+  z-index: 100;
+  opacity: 0.6;
+  animation: scan 6s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes slow-spin {
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+@keyframes scan {
+  0% {
+    transform: translateY(-100vh);
+  }
+  100% {
+    transform: translateY(200vh);
+  }
+}
+
+/* ============================================================
+   グラスモーフィズムパネル
+   ============================================================ */
+.glass-panel {
+  background: rgba(13, 25, 48, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 255, 255, 0.15);
+  position: relative;
+}
+
+/* パネル四隅のサイバー装飾 */
+.glass-panel.cyber-corners::before,
+.glass-panel.cyber-corners::after {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border: 2px solid #0ff;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.glass-panel.cyber-corners::before {
+  top: -1px;
+  left: -1px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.glass-panel.cyber-corners::after {
+  bottom: -1px;
+  right: -1px;
+  border-left: none;
+  border-top: none;
+}
+
+/* ============================================================
+   ローディング用魔法陣
+   ============================================================ */
+.loader-circle {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  border: 2px dashed #0ff;
+  animation: loader-spin 4s linear infinite;
+  position: relative;
+  box-shadow: 0 0 30px rgba(0, 255, 255, 0.2);
+}
+
+.loader-circle::before {
+  content: '';
+  position: absolute;
+  inset: -15px;
+  border: 1px dotted #f0f;
+  border-radius: 50%;
+  animation: loader-spin 6s linear infinite reverse;
+}
+
+.loader-circle-inner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80px;
+  height: 80px;
+  border: 1px solid rgba(0, 255, 255, 0.5);
+  border-radius: 50%;
+  animation: pulse-ring 2s ease-out infinite;
+}
+
+@keyframes loader-spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* デコード(ハッキング)風テキストの明滅 */
+@keyframes flicker {
+  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+    opacity: 1;
+  }
+  20%, 22%, 24%, 55% {
+    opacity: 0.4;
+  }
+}
+
+.animate-flicker {
+  animation: flicker 3s linear infinite;
+}
+
+/* ============================================================
+   カスタムスクロールバー (cyber)
+   ============================================================ */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 4px;
+  height: 4px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f0fdfa;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #99f6e4;
-  border-radius: 9999px;
+  background: #0891b2;
+  border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #2dd4bf;
+  background: #06b6d4;
 }
 
-/* Focus ring reset */
+/* フォーカスリング */
 *:focus-visible {
-  outline: 2px solid #2dd4bf;
+  outline: 2px solid #0ff;
   outline-offset: 2px;
 }
 
-button:focus-visible {
-  outline: 2px solid #2dd4bf;
-  outline-offset: 2px;
+/* ============================================================
+   Markdown content (ダークテーマ)
+   ============================================================ */
+.markdown-content {
+  color: #e2e8f0;
 }
 
-/* Markdown content styles */
 .markdown-content h1 {
   font-size: 1.5rem;
   font-weight: 700;
   margin-bottom: 0.75rem;
   line-height: 1.3;
+  color: #f1f5f9;
 }
 
 .markdown-content h2 {
@@ -57,12 +249,14 @@ button:focus-visible {
   font-weight: 700;
   margin-bottom: 0.5rem;
   line-height: 1.3;
+  color: #f1f5f9;
 }
 
 .markdown-content h3 {
   font-size: 1.1rem;
   font-weight: 600;
   margin-bottom: 0.5rem;
+  color: #f1f5f9;
 }
 
 .markdown-content p {
@@ -92,15 +286,18 @@ button:focus-visible {
 }
 
 .markdown-content code {
-  background: #f1f5f9;
+  background: rgba(8, 145, 178, 0.2);
+  border: 1px solid rgba(0, 255, 255, 0.2);
   border-radius: 0.25rem;
   padding: 0.125rem 0.375rem;
   font-size: 0.875em;
-  font-family: ui-monospace, monospace;
+  font-family: var(--font-mono);
+  color: #67e8f9;
 }
 
 .markdown-content pre {
-  background: #1e293b;
+  background: #0a1424;
+  border: 1px solid rgba(0, 255, 255, 0.15);
   border-radius: 0.5rem;
   padding: 1rem;
   margin-bottom: 0.75rem;
@@ -109,26 +306,28 @@ button:focus-visible {
 
 .markdown-content pre code {
   background: transparent;
+  border: none;
   padding: 0;
   color: #e2e8f0;
   font-size: 0.875rem;
 }
 
 .markdown-content blockquote {
-  border-left: 4px solid #5eead4;
+  border-left: 4px solid #0ff;
   padding-left: 1rem;
-  color: #475569;
+  color: #94a3b8;
   font-style: italic;
   margin-bottom: 0.75rem;
 }
 
 .markdown-content a {
-  color: #0d9488;
+  color: #22d3ee;
   text-decoration: underline;
 }
 
 .markdown-content strong {
   font-weight: 700;
+  color: #f1f5f9;
 }
 
 .markdown-content em {
@@ -143,20 +342,21 @@ button:focus-visible {
 }
 
 .markdown-content th {
-  border: 1px solid #e2e8f0;
+  border: 1px solid rgba(0, 255, 255, 0.2);
   padding: 0.5rem 0.75rem;
-  background: #f8fafc;
+  background: rgba(8, 145, 178, 0.15);
   font-weight: 600;
   text-align: left;
+  color: #f1f5f9;
 }
 
 .markdown-content td {
-  border: 1px solid #e2e8f0;
+  border: 1px solid rgba(0, 255, 255, 0.15);
   padding: 0.5rem 0.75rem;
 }
 
 .markdown-content hr {
   border: none;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid rgba(0, 255, 255, 0.15);
   margin: 1rem 0;
 }

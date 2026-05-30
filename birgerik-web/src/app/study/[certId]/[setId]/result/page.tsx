@@ -1,6 +1,7 @@
 'use client'
 
 import { use } from 'react'
+import { motion } from 'framer-motion'
 import { useStudyStore } from '@/store/study-store'
 import { WrongQuestionsList } from '@/components/shared/wrong-questions-list'
 import { ProgressCircle } from '@/components/shared/ui/progress-circle'
@@ -16,30 +17,42 @@ export default function ResultPage({ params }: Props) {
   const router = useRouter()
   const score = store.getScore()
   const wrongQuestions = store.getWrongQuestions()
-  const modeLabel =
-    store.mode === 'random' ? 'ランダム' : store.mode === 'review' ? '復習' : '順番'
 
   const handleReview = () => {
     store.startReviewSession()
-    router.push(`/study/${certId}/${setId}/practice?mode=review`)
+    router.push(`/study/${certId}/${setId}/practice`)
   }
 
   const handleRetry = () => {
-    router.push(`/study/${certId}/${setId}/mode-select`)
+    // 古いセッションを破棄してから practice を開き直し、問1からやり直す
+    store.endSession()
+    router.push(`/study/${certId}/${setId}/practice`)
   }
 
   const getMessage = () => {
-    if (score.percentage >= 80) return '素晴らしい！'
-    if (score.percentage >= 60) return 'よくできました！'
-    return 'もう少し頑張ろう！'
+    if (score.percentage >= 80) return 'KNOWLEDGE SYNCHRONIZED'
+    if (score.percentage >= 60) return 'SYNC COMPLETE'
+    return 'RESYNC REQUIRED'
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-12 text-center">
-      <div className="text-5xl mb-4">🏆</div>
-      <h1 className="text-3xl font-bold mb-2 text-gray-800">{getMessage()}</h1>
-      <p className="text-gray-500 mb-8">
-        {store.questionSetName} — {modeLabel}モード
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="max-w-2xl mx-auto px-4 py-12 text-center"
+    >
+      <div className="font-mono text-xs text-cyan-500 tracking-[0.3em] mb-3 animate-flicker">
+        {getMessage()}
+      </div>
+      <h1 className="text-3xl font-serif font-bold mb-2 text-slate-100 drop-shadow-[0_0_8px_rgba(0,255,255,0.3)]">
+        実行結果
+      </h1>
+      <p className="text-slate-400 font-serif mb-8">
+        {store.questionSetName}
+        {store.isReviewSession && (
+          <span className="ml-2 font-mono text-xs text-fuchsia-400">[ REVIEW ]</span>
+        )}
       </p>
 
       <div className="flex justify-center mb-8">
@@ -47,19 +60,21 @@ export default function ResultPage({ params }: Props) {
       </div>
 
       <div className="grid grid-cols-3 gap-4 mb-10">
-        <div className="bg-white border-2 border-teal-50 rounded-xl p-4 shadow-sm">
-          <div className="text-3xl font-bold text-blue-600">{score.percentage}%</div>
-          <div className="text-sm text-gray-500 mt-1">正答率</div>
+        <div className="glass-panel rounded-xl p-4">
+          <div className="text-3xl font-mono font-bold text-cyan-300">{score.percentage}%</div>
+          <div className="text-xs text-slate-400 mt-1 font-mono tracking-wide">ACCURACY</div>
         </div>
-        <div className="bg-white border-2 border-teal-50 rounded-xl p-4 shadow-sm">
-          <div className="text-3xl font-bold text-gray-800">
+        <div className="glass-panel rounded-xl p-4">
+          <div className="text-3xl font-mono font-bold text-emerald-400">
             {score.correct}/{score.total}
           </div>
-          <div className="text-sm text-gray-500 mt-1">正解数</div>
+          <div className="text-xs text-slate-400 mt-1 font-mono tracking-wide">CORRECT</div>
         </div>
-        <div className="bg-white border-2 border-teal-50 rounded-xl p-4 shadow-sm">
-          <div className="text-2xl font-bold text-purple-600">{modeLabel}</div>
-          <div className="text-sm text-gray-500 mt-1">モード</div>
+        <div className="glass-panel rounded-xl p-4">
+          <div className="text-3xl font-mono font-bold text-fuchsia-400">
+            {score.total - score.correct}
+          </div>
+          <div className="text-xs text-slate-400 mt-1 font-mono tracking-wide">INCORRECT</div>
         </div>
       </div>
 
@@ -78,6 +93,6 @@ export default function ResultPage({ params }: Props) {
           <Button variant="outline">学習トップへ</Button>
         </Link>
       </div>
-    </div>
+    </motion.div>
   )
 }

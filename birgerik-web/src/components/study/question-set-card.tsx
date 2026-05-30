@@ -1,8 +1,9 @@
+'use client'
+
 import type { QuestionSetSummary } from '@birgerik/types'
-import { Card } from '../shared/ui/card'
-import { Badge } from '../shared/ui/badge'
-import { FileText, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
+import { motion } from 'framer-motion'
+import { useStudyStore } from '@/store/study-store'
 
 interface QuestionSetCardProps {
   certId: string
@@ -11,23 +12,38 @@ interface QuestionSetCardProps {
 
 export function QuestionSetCard({ certId, questionSet }: QuestionSetCardProps) {
   return (
-    <Link href={`/study/${certId}/${questionSet.id}/mode-select`}>
-      <Card className="p-6 hover:shadow-md hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
-        <div className="flex items-start justify-between mb-3">
-          <div className="p-2 bg-blue-50 rounded-xl">
-            <FileText className="h-6 w-6 text-blue-500" />
-          </div>
-          <div className="flex items-center gap-2">
-            {questionSet.has_exam && <Badge variant="warning">試験あり</Badge>}
-            <ChevronRight className="h-5 w-5 text-gray-300 group-hover:text-teal-400 transition-colors" />
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <Link
+        href={`/study/${certId}/${questionSet.id}/practice`}
+        // 新規にクイズを開始する際は古い永続化セッションを明示的に破棄する。
+        // これにより F5 更新では状態維持、カードからの入り直しでは問1からリロードされる。
+        onClick={() => useStudyStore.getState().endSession()}
+        className="block text-left glass-panel rounded-xl p-6 transition-all hover:-translate-y-2 hover:shadow-neon-cyan group relative overflow-hidden"
+      >
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-400 to-transparent -translate-x-full group-hover:translate-x-0 transition-transform duration-500" />
+        <div className="flex justify-between items-start mb-4">
+          <h3 className="font-bold text-lg text-slate-100 group-hover:text-cyan-300 transition-colors font-serif">
+            {questionSet.name}
+          </h3>
+          <div className="flex items-center gap-2 shrink-0">
+            {questionSet.has_exam && (
+              <span className="font-mono text-xs text-amber-300 bg-amber-950/60 border border-amber-700 px-2 py-1 rounded">
+                EXAM
+              </span>
+            )}
+            <span className="font-mono text-xs text-cyan-300 bg-cyan-950/80 border border-cyan-800 px-2 py-1 rounded whitespace-nowrap">
+              {questionSet.question_count} Qs
+            </span>
           </div>
         </div>
-        <h2 className="font-bold text-lg mb-1 text-gray-800">{questionSet.name}</h2>
         {questionSet.description && (
-          <p className="text-sm text-gray-500 mb-3 line-clamp-2">{questionSet.description}</p>
+          <p className="text-sm text-slate-400 line-clamp-3 font-serif">{questionSet.description}</p>
         )}
-        <Badge variant="teal">{questionSet.question_count} 問</Badge>
-      </Card>
-    </Link>
+      </Link>
+    </motion.div>
   )
 }

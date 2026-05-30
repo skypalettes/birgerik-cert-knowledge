@@ -1,7 +1,6 @@
 'use client'
 
-import { Button } from '../shared/ui/button'
-import { ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react'
+import { RotateCcw } from 'lucide-react'
 
 interface StudyNavigationProps {
   isFirst: boolean
@@ -27,33 +26,42 @@ export function StudyNavigation({
   onFinish,
 }: StudyNavigationProps) {
   return (
-    <div className="flex items-center justify-between gap-3 mt-6">
-      <Button variant="outline" size="sm" onClick={onPrevious} disabled={isFirst}>
-        <ChevronLeft className="h-4 w-4 mr-1" />
-        前へ
-      </Button>
+    <div className="flex justify-between items-center border-t border-cyan-900/50 pt-6 mt-2">
+      <button
+        onClick={onPrevious}
+        disabled={isFirst}
+        className="font-mono text-sm px-6 py-2 text-slate-400 hover:text-cyan-300 transition-colors flex items-center gap-2 disabled:opacity-30 disabled:pointer-events-none"
+      >
+        <span>&lt;</span> PREV
+      </button>
 
-      <div className="flex gap-2">
+      <div className="flex items-center gap-2">
         {isSubmitted ? (
           <>
-            <Button variant="ghost" size="sm" onClick={onReset}>
+            <button
+              onClick={onReset}
+              className="font-mono text-sm p-2 text-slate-400 hover:text-cyan-300 transition-colors"
+              aria-label="やり直す"
+            >
               <RotateCcw className="h-4 w-4" />
-            </Button>
-            {isLast ? (
-              <Button variant="primary" onClick={onFinish}>
-                結果を見る
-              </Button>
-            ) : (
-              <Button variant="primary" onClick={onNext}>
-                次へ
-                <ChevronRight className="h-4 w-4 ml-1" />
-              </Button>
-            )}
+            </button>
+            <button
+              onClick={isLast ? onFinish : onNext}
+              className="group font-mono font-bold px-8 py-3 rounded bg-cyan-900/40 text-cyan-300 border border-cyan-500 hover:bg-cyan-500 hover:text-cyber-bg hover:shadow-neon-cyan transition-all duration-300"
+            >
+              {isLast ? 'RESULT' : 'NEXT'}{' '}
+              <span className="inline-block group-hover:translate-x-1 transition-transform">&gt;&gt;</span>
+            </button>
           </>
         ) : (
-          <Button variant="primary" onClick={onSubmit} disabled={!hasSelection}>
-            解答する
-          </Button>
+          <button
+            onClick={onSubmit}
+            disabled={!hasSelection}
+            className="group font-mono font-bold px-8 py-3 rounded bg-cyan-900/40 text-cyan-300 border border-cyan-500 hover:bg-cyan-500 hover:text-cyber-bg hover:shadow-neon-cyan transition-all duration-300 disabled:opacity-30 disabled:pointer-events-none"
+          >
+            EXECUTE{' '}
+            <span className="inline-block group-hover:translate-x-1 transition-transform">&gt;&gt;</span>
+          </button>
         )}
       </div>
     </div>

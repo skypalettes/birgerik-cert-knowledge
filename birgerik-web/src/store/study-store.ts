@@ -2,8 +2,6 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import type { QuestionWithChoices } from '@birgerik/types'
 
-type StudyMode = 'random' | 'review'
-
 interface AnswerHistory {
   questionId: string
   selectedChoiceIds: string[]
@@ -14,7 +12,8 @@ interface StudyState {
   questionSetId: string | null
   questionSetName: string | null
   certificationName: string | null
-  mode: StudyMode | null
+  /** 間違えた問題のみを抽出した復習セッションかどうか */
+  isReviewSession: boolean
   questions: QuestionWithChoices[]
   currentIndex: number
   selectedChoiceIds: string[]
@@ -30,7 +29,6 @@ interface StudyActions {
     questionSetName: string
     certificationName: string
     questions: QuestionWithChoices[]
-    mode: StudyMode
   }) => void
   endSession: () => void
   toggleChoice: (choiceId: string, isMultiple: boolean) => void
@@ -53,7 +51,7 @@ const initialState: StudyState = {
   questionSetId: null,
   questionSetName: null,
   certificationName: null,
-  mode: null,
+  isReviewSession: false,
   questions: [],
   currentIndex: 0,
   selectedChoiceIds: [],
@@ -77,7 +75,7 @@ export const useStudyStore = create<StudyState & StudyActions>()(
     (set, get) => ({
       ...initialState,
 
-      startSession: ({ questionSetId, questionSetName, certificationName, questions, mode }) => {
+      startSession: ({ questionSetId, questionSetName, certificationName, questions }) => {
         const shuffledQuestions = shuffleArray(questions).map((q) => ({
           ...q,
           choices: shuffleArray(q.choices),
@@ -87,7 +85,7 @@ export const useStudyStore = create<StudyState & StudyActions>()(
           questionSetId,
           questionSetName,
           certificationName,
-          mode,
+          isReviewSession: false,
           questions: shuffledQuestions,
           isSessionActive: true,
         })
@@ -181,7 +179,7 @@ export const useStudyStore = create<StudyState & StudyActions>()(
           questionSetId: state.questionSetId,
           questionSetName: state.questionSetName,
           certificationName: state.certificationName,
-          mode: 'review',
+          isReviewSession: true,
           questions: wrongQuestions,
           isSessionActive: true,
         })

@@ -11,8 +11,8 @@ export function ExamNavigator({ questions, currentIndex, answerHistory, onGoTo }
   const answerMap = new Map(answerHistory.map((h) => [h.questionId, h]))
 
   return (
-    <div className="bg-gray-50 rounded-xl p-4">
-      <div className="text-xs font-semibold text-gray-500 mb-3">問題一覧</div>
+    <div className="glass-panel rounded-xl p-4">
+      <div className="text-xs font-mono font-semibold text-cyan-500 mb-3 tracking-wide">INDEX</div>
       <div className="grid grid-cols-4 gap-2">
         {questions.map((q, i) => {
           const answered = answerMap.has(q.id)
@@ -22,9 +22,13 @@ export function ExamNavigator({ questions, currentIndex, answerHistory, onGoTo }
               key={q.id}
               onClick={() => onGoTo(i)}
               className={`
-                w-8 h-8 rounded-lg text-xs font-bold transition-all
-                ${isActive ? 'ring-2 ring-blue-500 ring-offset-1' : ''}
-                ${!answered ? 'bg-gray-200 text-gray-600' : 'bg-blue-100 text-blue-700'}
+                w-8 h-8 rounded text-xs font-mono font-bold transition-all border
+                ${isActive ? 'ring-2 ring-cyan-400 ring-offset-1 ring-offset-cyber-bg' : ''}
+                ${
+                  answered
+                    ? 'bg-cyan-900/50 text-cyan-300 border-cyan-700'
+                    : 'bg-slate-800/60 text-slate-400 border-slate-700'
+                }
               `}
             >
               {i + 1}
@@ -32,12 +36,12 @@ export function ExamNavigator({ questions, currentIndex, answerHistory, onGoTo }
           )
         })}
       </div>
-      <div className="flex gap-3 mt-3 text-xs text-gray-500">
+      <div className="flex gap-3 mt-3 text-xs text-slate-400 font-mono">
         <span className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded bg-gray-200 inline-block" /> 未回答
+          <span className="w-3 h-3 rounded bg-slate-800/60 border border-slate-700 inline-block" /> 未回答
         </span>
         <span className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded bg-blue-100 inline-block" /> 回答済
+          <span className="w-3 h-3 rounded bg-cyan-900/50 border border-cyan-700 inline-block" /> 回答済
         </span>
       </div>
     </div>

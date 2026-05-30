@@ -1,34 +1,61 @@
 'use client'
 
 import type { Choice } from '@birgerik/types'
-import { CheckCircle, Circle } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 
 interface ExamChoiceOptionProps {
   choice: Choice
   isSelected: boolean
+  /** 複数選択（四角/マゼンタ）か単一選択（円/エメラルド）か */
+  isMultiple: boolean
   onToggle: () => void
 }
 
-export function ExamChoiceOption({ choice, isSelected, onToggle }: ExamChoiceOptionProps) {
+export function ExamChoiceOption({
+  choice,
+  isSelected,
+  isMultiple,
+  onToggle,
+}: ExamChoiceOptionProps) {
+  const containerStyles = isSelected
+    ? isMultiple
+      ? 'border-fuchsia-500 bg-fuchsia-900/20 shadow-neon-magenta'
+      : 'border-emerald-500 bg-emerald-900/20 shadow-neon-emerald'
+    : 'border-slate-700 hover:border-slate-400 hover:bg-slate-800/50'
+
+  const borderColor = isSelected
+    ? isMultiple
+      ? 'border-fuchsia-400'
+      : 'border-emerald-400'
+    : 'border-slate-500 group-hover:border-slate-300'
+
+  const filledColor = isMultiple ? 'bg-fuchsia-500' : 'bg-emerald-500'
+
   return (
     <button
       onClick={onToggle}
       className={cn(
-        'w-full flex items-start gap-3 px-4 py-3 rounded-xl border-2 text-left transition-all duration-200',
-        isSelected
-          ? 'border-blue-400 bg-blue-50 text-blue-700'
-          : 'border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50/50 text-gray-700'
+        'group w-full glass-panel rounded-lg p-5 flex items-center gap-5 text-left transition-all duration-300',
+        containerStyles
       )}
     >
-      <span className="flex-shrink-0 mt-0.5">
-        {isSelected ? (
-          <CheckCircle className="h-5 w-5 text-blue-500" />
-        ) : (
-          <Circle className="h-5 w-5 text-gray-300" />
+      <span
+        className={cn(
+          'relative w-6 h-6 border-2 flex items-center justify-center shrink-0 transition-all duration-300',
+          isMultiple ? 'rounded-none' : 'rounded-full',
+          borderColor
         )}
+      >
+        <span
+          className={cn(
+            'absolute inset-0.5 transition-transform duration-200 ease-out',
+            isMultiple ? 'rounded-none' : 'rounded-full',
+            filledColor,
+            isSelected ? 'scale-100' : 'scale-0'
+          )}
+        />
       </span>
-      <span className="text-sm leading-relaxed">{choice.choice_text}</span>
+      <span className="text-base text-slate-300">{choice.choice_text}</span>
     </button>
   )
 }
