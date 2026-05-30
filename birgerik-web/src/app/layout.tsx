@@ -20,7 +20,7 @@ const firaCode = Fira_Code({
 })
 
 export const metadata: Metadata = {
-  title: 'Birgerik.Grimoire',
+  title: 'Birgerik',
   description: '資格学習・試験アプリケーション',
 }
 

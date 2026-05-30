@@ -9,7 +9,7 @@ interface CyberHeaderProps {
 
 /**
  * 全画面共通のサイバーヘッダー。
- * 左にロゴ（ひし形 + Birgerik.Grimoire）、右にナビ or SYS_ONLINE インジケータ。
+ * 左にロゴ（ひし形 + Birgerik）、右にナビ or SYS_ONLINE インジケータ。
  */
 export function CyberHeader({ active, showNav = true }: CyberHeaderProps) {
   return (
@@ -20,7 +20,7 @@ export function CyberHeader({ active, showNav = true }: CyberHeaderProps) {
             <div className="w-4 h-4 bg-cyan-400 rotate-45 group-hover:rotate-[135deg] transition-transform duration-500" />
           </div>
           <div className="text-cyan-300 font-serif font-bold text-xl drop-shadow-[0_0_5px_#0ff]">
-            Birgerik.Grimoire
+            Birgerik
           </div>
         </Link>
 

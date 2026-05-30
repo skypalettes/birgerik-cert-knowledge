@@ -26,7 +26,7 @@ export default async function StudyPage() {
   return (
     <div className="max-w-5xl mx-auto w-full px-4 py-12">
       <div className="mb-12 border-l-4 border-cyan-400 pl-6">
-        <h1 className="text-4xl font-serif font-bold text-slate-100 mb-2">知識の書庫へようこそ</h1>
+        <h1 className="text-4xl font-serif font-bold text-slate-100 mb-2">Birgerik へようこそ</h1>
         <p className="text-cyan-400 font-mono text-sm tracking-wide">
           Select a grimoire to synchronize your brain.
         </p>

@@ -10,7 +10,7 @@ export function ExamResultDetail({ incorrectQuestions }: ExamResultDetailProps) 
   if (incorrectQuestions.length === 0) {
     return (
       <div className="text-center py-6 text-emerald-400 font-mono font-bold text-lg drop-shadow-[0_0_8px_rgba(16,185,129,0.4)]">
-        🎯 全問正解です！
+        おつかれさまでした
       </div>
     )
   }
@@ -32,11 +32,10 @@ export function ExamResultDetail({ incorrectQuestions }: ExamResultDetailProps) 
                 {q.choices.map((choice) => (
                   <div
                     key={choice.id}
-                    className={`flex items-start gap-2 px-3 py-2 rounded-lg text-sm ${
-                      choice.is_correct
+                    className={`flex items-start gap-2 px-3 py-2 rounded-lg text-sm ${choice.is_correct
                         ? 'bg-emerald-950/40 text-emerald-300 border border-emerald-800/50'
                         : 'bg-slate-800/40 text-slate-500'
-                    }`}
+                      }`}
                   >
                     {choice.is_correct ? (
                       <CheckCircle className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-400" />

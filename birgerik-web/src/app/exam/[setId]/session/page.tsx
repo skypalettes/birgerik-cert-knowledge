@@ -49,7 +49,12 @@ export default function ExamSessionPage({ params }: Props) {
   const progress = store.getProgress()
 
   const handleFinish = () => {
-    const unanswered = progress.total - progress.answeredCount
+    // 現在表示中の問題の選択は、ページ遷移するまで answerHistory に未保存。
+    // 終了前にここで確定させ、未回答数を最新の状態で数え直す
+    // （最後の問題を解答して直接「終了する」を押すケースに対応）。
+    store.saveCurrentAnswer()
+    const { total, answeredCount } = store.getProgress()
+    const unanswered = total - answeredCount
     if (unanswered > 0) {
       const ok = confirm(`未回答の問題が ${unanswered} 問あります。終了しますか？`)
       if (!ok) return
